@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="128" fill="#0f172a"/>
+  <!-- Shield and Cube Asset Representation -->
+  <path d="M256 64L392 124V256C392 352 256 448 256 448C256 448 120 352 120 256V124L256 64Z" stroke="#0d9488" stroke-width="24" stroke-linejoin="round" fill="#134e4a" fill-opacity="0.25"/>
+  <path d="M256 160L336 206V300L256 346L176 300V206L256 160Z" fill="#14b8a6" fill-opacity="0.3" stroke="#2dd4bf" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M256 160V346" stroke="#2dd4bf" stroke-width="16"/>
+  <path d="M176 206L256 253L336 206" stroke="#2dd4bf" stroke-width="16"/>
+  <circle cx="256" cy="253" r="14" fill="#f0fdfa"/>
+</svg>
