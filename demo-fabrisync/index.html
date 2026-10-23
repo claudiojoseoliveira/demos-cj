@@ -239,7 +239,7 @@ tr.op-cancelada td small{text-decoration:none!important;display:inline-block}
 @media(max-width:600px){#demoBar{left:8px;right:8px;justify-content:space-between;bottom:8px}#demoBar span{display:none}}
 .ob-exc{display:none!important}.logo-header{margin:-4px 0}
 .container{padding-bottom:64px}body{padding-bottom:64px}
-</style><style>/* Correções da revisão 22/10/2026: resumo rola no celular; conteúdo não fica sob a barra fixa da demo */#resumoConteudo{overflow-x:auto;-webkit-overflow-scrolling:touch}#modalResumo .modal-box{max-width:96vw}.container{padding-bottom:70px}</style></head>
+</style><style>/* Correções da revisão 22/10/2026 + rolagem 23/10/2026: no desktop o app termina acima da barra fixa da demo (nada fica cortado embaixo); no celular, respiro no fim do conteúdo */#resumoConteudo{overflow-x:auto;-webkit-overflow-scrolling:touch}#modalResumo .modal-box{max-width:96vw}@media(min-width:769px){.container{height:calc(100vh - 108px)!important}}@media(max-width:768px){.tab-content{padding-bottom:70px}}</style></head>
 <body>
 <div class="backup-indicator" id="backupIndicator"><i class="fas fa-save"></i> Backup automático</div>
 <div class="login-overlay" id="loginOverlay"><div class="login-box">
