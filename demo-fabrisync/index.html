@@ -373,7 +373,7 @@ tr.op-cancelada td small{text-decoration:none!important;display:inline-block}
 .kanban-card{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #3b82c4;border-radius:10px;padding:8px 10px;margin-bottom:8px;cursor:pointer;color:#1a3d5e}
 .kanban-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
 .kanban-card .kc-op{font-weight:700;font-size:.85rem;color:#1a3d5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kanban-card .kc-tipo{color:#5a7a94;font-size:.78rem}
+.kanban-card .kc-tipo{color:#5a7a94;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kanban-card .kc-tec{font-size:.76rem;color:#5a7a94;margin-top:2px}
 .kanban-card .kc-qtd{font-size:.78rem;font-weight:600;margin-top:2px;color:#1a3d5e}
 .kanban-card .kc-obra{font-size:.72rem;color:#7a96b2;margin-top:2px}
@@ -2534,7 +2534,7 @@ function getDescricaoDe(cod,tipo){var m=masterDeCod(cod);if(!m)return '';var f=n
 function kanbanCardHtml(opNum,tipo,tecnico,qtde,cod,nomeObra){
   var descr=getDescricaoDe(cod||dadosXML.obra.codigo,tipo)||tipo;
   var obraHtml=(cod&&nomeObra)?'<div class="kc-obra">'+escH(cod)+' · '+escH(nomeObra)+'</div>':'';
-  return '<div class="kanban-card" data-tipo="'+escH(tipo)+'" data-cod="'+escH(cod||'')+'"><div class="kc-op" title="'+escH(descr)+'">'+escH(descr)+'</div><div class="kc-tipo">'+escH(tipo)+(opNum?' · '+escH(opNum):'')+'</div><div class="kc-tec">'+escH(tecnico||'Técnico não informado')+'</div><div class="kc-qtd">'+fmtInt(qtde)+' un.</div>'+obraHtml+'</div>';
+  return '<div class="kanban-card" data-tipo="'+escH(tipo)+'" data-cod="'+escH(cod||'')+'"><div class="kc-op">'+escH(tipo)+'</div><div class="kc-tipo" title="'+escH(descr)+'">'+escH(descr)+(opNum?' · '+escH(opNum):'')+'</div><div class="kc-tec">'+escH(tecnico||'Técnico não informado')+'</div><div class="kc-qtd">'+fmtInt(qtde)+' un.</div>'+obraHtml+'</div>';
 }
 var KANBAN_FILTRO='';
 function renderizarKanban(){
@@ -2776,7 +2776,7 @@ try{if(!localStorage.getItem('fg_demo_v42')){if(!localStorage.getItem('fg_notifi
 /* v4.3: migração aditiva (VER mantido em demo-2026-11-10-v4) — Agenda: obs='' e status no novo vocabulário; nunca sobrescreve */
 try{if(!localStorage.getItem('fg_demo_v43')){['FS2026-00-0002','FS2026-00-0003','FS2026-00-0006','FS2026-00-0007','FS2026-00-0008','FS2026-00-0009'].forEach(function(c){var k='fg_agenda_'+c;try{var a=JSON.parse(localStorage.getItem(k)||'[]');var mudou=false;a.forEach(function(it){if(it.obs===undefined){it.obs='';mudou=true;}if(!it.status){it.status='Planejada';mudou=true;}else if(it.status==='Agendado'){it.status='Planejada';mudou=true;}else if(it.status==='Realizado'){it.status='Concluída';mudou=true;}else if(it.status==='Cancelado'){it.status='Cancelada';mudou=true;}});if(mudou)localStorage.setItem(k,JSON.stringify(a));}catch(e){}});localStorage.setItem('fg_demo_v43','1');}}catch(e){}
 /* v4.4: migração aditiva (VER mantido em demo-2026-11-10-v4) — corrige "foi cancelada" -> "foi cancelado" no fg_notificacoes já gravado; nunca sobrescreve */
-try{if(!localStorage.getItem('fg_demo_v44')){try{var _n44=JSON.parse(localStorage.getItem('fg_notificacoes')||'[]');var _m44=false;_n44.forEach(function(n){if(n.corpo&&n.corpo.indexOf('foi cancelada')>-1){n.corpo=n.corpo.replace('foi cancelada','foi cancelado');_m44=true;}});if(_m44)localStorage.setItem('fg_notificacoes',JSON.stringify(_n44));}catch(e){}localStorage.setItem('fg_demo_v44','1');}}catch(e){}
+try{if(!localStorage.getItem('fg_demo_v44')){try{var _n44=JSON.parse(localStorage.getItem('fg_notificacoes')||'[]');var _m44=false;_n44.forEach(function(n){if(n.corpo&&n.corpo.indexOf('foi cancelada')>-1){n.corpo=n.corpo.replace('foi cancelada','foi cancelado');_m44=true;}});if(_m44)localStorage.setItem('fg_notificacoes',JSON.stringify(_n44));}catch(e){}localStorage.setItem('fg_demo_v44','1');}}catch(e){}try{if(!localStorage.getItem('fg_demo_v45')){localStorage.setItem('fg_demo_v45','1');}}catch(e){}
 /* nunca falar com servidor */
 try{localStorage.removeItem('fg_sync_url');}catch(e){}
 SYNC_URL='';
