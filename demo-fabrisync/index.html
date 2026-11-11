@@ -337,7 +337,7 @@ tr.op-cancelada td small{text-decoration:none!important;display:inline-block}
 .rel-obra{margin-top:8px;font-size:.9rem;color:#1a3d5e}
 .rel-obra span{font-size:.74rem;color:#5a7a94}
 .rel-status{margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.8rem;color:#1a3d5e}
-@media print{#relImprimirBtn{display:none!important}.rel-cab{border-bottom:2px solid #000}}
+@media print{#relImprimirBtn{display:none!important}#relCsvBtn{display:none!important}.rel-cab{border-bottom:2px solid #000}}
 
 
 /* ===== v4: agenda ===== */
@@ -372,10 +372,11 @@ tr.op-cancelada td small{text-decoration:none!important;display:inline-block}
 .kanban-col-h .n{background:#1a6fb0;color:#fff;border-radius:10px;padding:1px 8px;font-size:.72rem}
 .kanban-card{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #3b82c4;border-radius:10px;padding:8px 10px;margin-bottom:8px;cursor:pointer;color:#1a3d5e}
 .kanban-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
-.kanban-card .kc-op{font-weight:700;font-size:.85rem;color:#1a3d5e}
+.kanban-card .kc-op{font-weight:700;font-size:.85rem;color:#1a3d5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kanban-card .kc-tipo{color:#5a7a94;font-size:.78rem}
 .kanban-card .kc-tec{font-size:.76rem;color:#5a7a94;margin-top:2px}
 .kanban-card .kc-qtd{font-size:.78rem;font-weight:600;margin-top:2px;color:#1a3d5e}
+.kanban-card .kc-obra{font-size:.72rem;color:#7a96b2;margin-top:2px}
 .kanban-vazio{color:#7a96b2;font-size:.78rem;text-align:center;padding:12px 4px}
 .notif-pill{display:inline-block;background:#1a6fb0;color:#fff;border-radius:12px;padding:2px 10px;font-size:.78rem;font-weight:700}
 .notif-item{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #1a6fb0;border-radius:12px;padding:10px 12px;margin-bottom:8px;color:#1a3d5e}
@@ -513,7 +514,7 @@ tr.op-cancelada td small{text-decoration:none!important;display:inline-block}
 <div id="cronConteudo"></div>
 </div></div>
 <div class="tab-content" id="tab-rel"><div class="table-container">
-<div class="table-header-actions"><h3><i class="fas fa-file-alt"></i> Relatório da obra</h3><button class="btn btn-primary btn-sm" id="relImprimirBtn"><i class="fas fa-print"></i> Imprimir / PDF</button></div>
+<div class="table-header-actions"><h3><i class="fas fa-file-alt"></i> Relatório da obra</h3><button class="btn btn-primary btn-sm" id="relCsvBtn"><i class="fas fa-file-csv"></i> Exportar CSV</button> <button class="btn btn-primary btn-sm" id="relImprimirBtn"><i class="fas fa-print"></i> Imprimir / PDF</button></div>
 <div id="relConteudo"></div>
 </div></div>
 <div class="tab-content" id="tab-agenda"><div class="table-container">
@@ -768,6 +769,18 @@ function regAuditoria(acao,detalhe){auditoria.push({ts:agoraLocal(),user:usuario
 function mergeAuditoria(a,b){var keys={};var out=[];a.concat(b).forEach(function(e){var k=String(e.ts||'')+'|'+(e.user||'')+'|'+(e.acao||'')+'|'+(e.detalhe||'');if(!keys[k]){keys[k]=true;out.push(e);}});out.sort(function(x,y){return String(x.ts).localeCompare(String(y.ts));});return out.slice(-2000);}
 function renderizarAuditoria(f){var tb=document.getElementById('audBody');if(!tb)return;var ff=(f||'').toLowerCase();var list=auditoria.slice().reverse();if(ff)list=list.filter(function(e){return (e.user||'').toLowerCase().indexOf(ff)>-1||(e.acao||'').toLowerCase().indexOf(ff)>-1||(e.detalhe||'').toLowerCase().indexOf(ff)>-1;});var h='';list.slice(0,500).forEach(function(e){h+='<tr><td style="white-space:nowrap;">'+escH(fmtTs(e.ts))+'</td><td>'+escH(e.user||'—')+'</td><td><strong>'+escH(e.acao)+'</strong></td><td>'+escH(e.detalhe||'')+'</td></tr>';});tb.innerHTML=h||'<tr><td colspan="4" style="text-align:center;color:#8a9bb0;font-style:italic;">Nenhum evento de auditoria</td></tr>';}
 function exportarAudCSV(){var rows=[['data_hora','usuario','acao','detalhe']];auditoria.forEach(function(e){rows.push([e.ts,e.user,e.acao,e.detalhe]);});var csv='\uFEFF'+rows.map(function(r){return r.map(function(c2){c2=String(c2==null?'':c2);if(/[";\n]/.test(c2))c2='"'+c2.replace(/"/g,'""')+'"';return c2;}).join(';');}).join('\n');var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='auditoria_'+dadosXML.obra.codigo+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);regAuditoria('AUDITORIA_EXPORTADA','');salvarTudo();mostrarToast('✅ Auditoria exportada em CSV');}
+function exportarRelatorioCSV(){
+  var cod=dadosXML.obra.codigo;
+  var rows=[['Obra','Código','Tipologia','Planejado','Executado','Pendente','Área planejada','Área executada','Peso planejado','Peso executado','Percentual']];
+  getTipos().forEach(function(t){
+    var q=getQtdeOriginal(t),l=getLiberado(t),pd=Math.max(0,q-l);
+    rows.push([dadosXML.obra.nome,cod,getDescricao(t),fmtInt(q),fmtInt(l),fmtInt(pd),fmt2(getAreaUnit(t)*q),fmt2(getAreaLiberada(t)),fmt2(getPesoUnit(t)*q),fmt2(getPesoLiberado(t)),pct2(q>0?l/q*100:0)]);
+  });
+  var csv='\uFEFF'+rows.map(function(r){return r.map(function(c2){c2=String(c2==null?'':c2);if(/[\";\n]/.test(c2))c2='"'+c2.replace(/\"/g,'""')+'"';return c2;}).join(';');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='FABRISYNC_Relatorio_'+cod+'_'+hojeLocal()+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  regAuditoria('RELATORIO_CSV_EXPORTADO',cod);salvarTudo();mostrarToast('✅ Relatório exportado em CSV');
+}
 function getTipos(){return dadosXML.tipologias.map(function(t){return t.tipo;});}
 function findT(t){return dadosXML.tipologias.find(function(x){return x.tipo===t;});}
 function getQtdeOriginal(t){var f=findT(t);return f?f.qtde:0;}
@@ -807,7 +820,7 @@ input.addEventListener('blur',function(){setTimeout(function(){drop.classList.re
 }
 function reconciliarSessao(){if(!usuarioLogado)return;var match=null;usuarios.forEach(function(u){if(u.usuario===usuarioLogado.usuario)match=u;});if(match){if(match.ativo===false){usuarioLogado=null;return;}usuarioLogado=match;}else{usuarioLogado={id:usuarioLogado.id||9000,usuario:usuarioLogado.usuario,senha:usuarioLogado.senha,tipo:usuarioLogado.tipo,perms:usuarioLogado.perms,ativo:true};}}
 function aplicarMaster(master){dadosXML=master;obrasRegistry[master.obra.codigo]=master;salvarRegistry();liberacoes=[];opsAvulsas=[];tecnicos=[];tecInfo={};metas={};auditoria=[];lotePendente=[];loteTecNovos=[];syncState.lastRemote=0;carregarTudo();reconciliarSessao();preencherLoginUsuarios();preencherSwitch();puxarInicial(function(){atualizarLoginSyncInfo();});if(usuarioLogado){document.getElementById('loginOverlay').classList.add('hidden');document.getElementById('app').style.display='flex';iniciarApp();mostrarToast('🏗️ Obra ativa: '+master.obra.codigo+' (sessão mantida)');}else{document.getElementById('app').style.display='none';document.getElementById('loginOverlay').classList.remove('hidden');document.getElementById('loginPass').value='';mostrarToast('🏗️ Obra ativa: '+master.obra.codigo);}}
-function trocarObra(codigo){if(!codigo||codigo===dadosXML.obra.codigo)return;if(obrasRegistry[codigo]){aplicarMaster(obrasRegistry[codigo]);return;}if(SYNC_URL){syncStatus('wait');fetchCloudJSON(SYNC_URL+'?obra='+encodeURIComponent(codigo)).then(function(j){if(j&&j.master)aplicarMaster(j.master);else mostrarToast('⚠️ Obra sem dados-mestre na nuvem','error');}).catch(function(err){mostrarToast(mensagemErroNuvem(err),'error');});}else{mostrarToast('⚠️ Sem nuvem: importe o XML da obra','error');}}
+function trocarObra(codigo){if(!codigo||codigo===dadosXML.obra.codigo)return;if(KANBAN_FILTRO&&KANBAN_FILTRO!=='todas')KANBAN_FILTRO=''; /* v4.3: filtro de obra específica acompanha a obra selecionada; 'Todas' é escolha explícita e fica */if(obrasRegistry[codigo]){aplicarMaster(obrasRegistry[codigo]);return;}if(SYNC_URL){syncStatus('wait');fetchCloudJSON(SYNC_URL+'?obra='+encodeURIComponent(codigo)).then(function(j){if(j&&j.master)aplicarMaster(j.master);else mostrarToast('⚠️ Obra sem dados-mestre na nuvem','error');}).catch(function(err){mostrarToast(mensagemErroNuvem(err),'error');});}else{mostrarToast('⚠️ Sem nuvem: importe o XML da obra','error');}}
 function carregarListaObras(cb){if(!SYNC_URL){if(cb)cb(null,new Error('SEM_NUVEM'));return;}fetchCloudJSON(SYNC_URL+'?list=1').then(function(j){listaServidor=((j&&j.obras)||[]).filter(function(o){if(o.excluida){obrasExcluidas[o.codigo]=obrasExcluidas[o.codigo]||{por:'',em:''};return false;}return true;});salvarExcluidas();preencherSwitch();if(cb)cb(listaServidor);}).catch(function(err){listaServidor=[];if(cb)cb(null,err);});}
 var syncState={lastRemote:0,timer:null,pending:false,dirty:false};
 function syncStatus(mode){var dot=document.getElementById('statusDot'),txt=document.getElementById('statusText');if(!dot)return;if(mode==='off'){dot.style.background='#7a96b2';txt.textContent='Dados salvos localmente (sem nuvem)';}else if(mode==='wait'){dot.style.background='#f39c12';txt.textContent='Sincronizando com a nuvem...';}else if(mode==='ok'){dot.style.background='#27ae60';txt.textContent='Dados sincronizados na nuvem (compartilhado)';}else{dot.style.background='#c0392b';txt.textContent='Sem internet — salvando local, sincroniza ao reconectar';}}
@@ -1437,6 +1450,7 @@ function ganttHtml(cod){
 
 /* ---------- "Por obra": editor de datas + marcos + entregas + inconformidades + processos ---------- */
 function editorDatasHtml(cod){
+  if(!podeGerirObra())return '';
   var c=cronogramaDe(cod);
   var tips=(masterDeCod(cod)||{tipologias:[]}).tipologias;
   var h='<div class="cron-sec"><h4 class="dash-h">Editar datas do cronograma</h4><div class="cron-ed">';
@@ -1466,6 +1480,7 @@ function atualizarEditorDatas(){
   if(ei)ei.value=ini;if(ef)ef.value=fim;
 }
 function salvarEditorDatas(){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   var niv=document.getElementById('cronEdNivel').value;
   var ini=document.getElementById('cronEdIni').value,fim=document.getElementById('cronEdFim').value;
   if(ini&&fim&&ini>fim){mostrarToast('⚠️ Data de início posterior à data de fim','error');return;}
@@ -1485,9 +1500,10 @@ function salvarEditorDatas(){
     cronograma.tip[t2].procs[p2]=cronograma.tip[t2].procs[p2]||{};cronograma.tip[t2].procs[p2].startDate=ini;cronograma.tip[t2].procs[p2].endDate=fim;
   }
   regAuditoria('CRONOGRAMA_SALVO',dadosXML.obra.codigo+' · nível '+niv+' · '+(ini||'—')+' → '+(fim||'—'));
-  salvarTudo();renderizarCronograma();mostrarToast('✅ Datas do cronograma salvas');
+  salvarTudo();renderizarCronograma();BANNER_FIM_CACHE='';renderizarBannerFim();mostrarToast('✅ Datas do cronograma salvas');
 }
 function limparEditorDatas(){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   var niv=document.getElementById('cronEdNivel').value;
   if(!cronograma)cronograma=cronogramaPadrao();
   if(niv==='obra'){cronograma.startDate='';cronograma.endDate='';cronograma.tip={};cronograma.proc={};}
@@ -1495,26 +1511,33 @@ function limparEditorDatas(){
   else if(niv==='processo'){var p=document.getElementById('cronEdProc').value;delete cronograma.proc[p];}
   else if(niv==='tipproc'){var t2=document.getElementById('cronEdTip').value,p2=document.getElementById('cronEdProc').value;if(cronograma.tip[t2]&&cronograma.tip[t2].procs)delete cronograma.tip[t2].procs[p2];}
   regAuditoria('CRONOGRAMA_LIMPO',dadosXML.obra.codigo+' · nível '+niv);
-  salvarTudo();renderizarCronograma();mostrarToast('✅ Datas removidas');
+  salvarTudo();renderizarCronograma();BANNER_FIM_CACHE='';renderizarBannerFim();mostrarToast('✅ Datas removidas');
 }
 function marcosHtml(cod){
   var mc=marcosDe(cod);
+  var pode=podeGerirObra();
   var h='<div class="cron-sec"><h4 class="dash-h">Marcos da obra</h4><div class="marcos-grid">';
   MARCOS_NOMES.forEach(function(nm){
     var rec=null;mc.forEach(function(x){if(x.nome===nm)rec=x;});
     var st=rec?rec.status:'Não iniciado';
-    h+='<div class="marco-card" data-marco="'+escH(nm)+'"><strong>'+escH(nm)+'</strong>'
-      +'<label>Status <select class="marco-status sel-obra">'+['Não iniciado','Em andamento','Concluído','Bloqueado'].map(function(s){return '<option'+(s===st?' selected':'')+'>'+s+'</option>';}).join('')+'</select></label>'
+    h+='<div class="marco-card" data-marco="'+escH(nm)+'"><strong>'+escH(nm)+'</strong>';
+    if(pode){
+      h+='<label>Status <select class="marco-status sel-obra">'+['Não iniciado','Em andamento','Concluído','Bloqueado'].map(function(s){return '<option'+(s===st?' selected':'')+'>'+s+'</option>';}).join('')+'</select></label>'
       +'<label>Início <input type="date" class="marco-ini sel-obra" value="'+escH(rec?rec.inicio||'':'')+'"></label>'
       +'<label>Fim <input type="date" class="marco-fim sel-obra" value="'+escH(rec?rec.fim||'':'')+'"></label>'
       +'<label>Responsável <input type="text" class="marco-resp sel-obra" maxlength="120" placeholder="Responsável (máx. 120)" value="'+escH(rec?rec.responsavel||'':'')+'"></label>'
       +'<label>Observação <textarea class="marco-obs sel-obra" maxlength="500" rows="2" placeholder="Observação (máx. 500)">'+escH(rec?rec.obs||'':'')+'</textarea></label>'
-      +'<button class="btn btn-primary btn-sm marco-salvar">Salvar marco</button></div>';
+      +'<button class="btn btn-primary btn-sm marco-salvar">Salvar marco</button>';
+    }else{
+      h+='<div class="marco-leitura" style="font-size:.8rem;color:#5a7a94;margin-top:6px;">Status: <strong>'+escH(st)+'</strong><br>Início: '+escH(rec&&rec.inicio?fmtTs(rec.inicio):'—')+' · Fim: '+escH(rec&&rec.fim?fmtTs(rec.fim):'—')+'<br>Responsável: '+escH(rec?rec.responsavel||'—':'—')+(rec&&rec.obs?'<br>Obs.: '+escH(rec.obs):'')+'</div>';
+    }
+    h+='</div>';
   });
   h+='</div><div class="lote-nota">Um marco Bloqueado vira a etapa atual da obra.</div></div>';
   return h;
 }
 function entregaFormHtml(cod){
+  if(!podeGerirObra())return '';
   var ed=null;
   if(CRON_EDIT_ENTREGA>=0)entregas.forEach(function(e){if(e.id===CRON_EDIT_ENTREGA)ed=e;});
   var tips=(masterDeCod(cod)||{tipologias:[]}).tipologias;
@@ -1537,6 +1560,7 @@ function renderEntItems(){
   box.querySelectorAll('.ent-item-rm').forEach(function(b){b.addEventListener('click',function(){CRON_ENTREGA_ITEMS.splice(+this.dataset.i,1);renderEntItems();});});
 }
 function entregasHtml(cod){
+  var pode=podeGerirObra(),admin=isAdmin();
   var ent=entregasDe(cod);
   var tips=(masterDeCod(cod)||{tipologias:[]}).tipologias;
   var lib=liberacoesDe(cod);
@@ -1554,13 +1578,14 @@ function entregasHtml(cod){
     h+='<div class="ent-card" data-id="'+e.id+'"><div class="ent-top"><strong>'+escH(e.nome)+'</strong><span class="stg" style="background:'+(e.status==='ACEITA'?'#1a9a5a':(e.status==='EM_REVISAO'?'#e08e0b':'#7a96b2'))+';">'+escH(e.status)+'</span><span>'+escH(e.tipo==='total'?'Entrega total':'Entrega parcial')+'</span></div>'
       +'<div class="ent-meta">Termo: <strong>'+escH(e.termo||'—')+'</strong> · Assinado em: '+(e.signedTermDate?escH(fmtTs(e.signedTermDate)):'—')+(semTermo?' <span class="badge-extra">Sem termo assinado: não vale</span>':'')+' · Fiscal: '+escH(e.fiscal||'—')+' · Data: '+escH(e.data?fmtTs(e.data):'—')+'</div>'
       +'<div class="ent-items">'+(e.items||[]).map(function(it){return '<span class="ent-item">'+escH(it.tipo)+' · '+fmtInt(it.qtde)+' un</span>';}).join(' ')+'</div>'
-      +'<div class="ent-acoes"><button class="btn btn-info btn-sm ent-editar">Editar</button> <button class="btn btn-danger btn-sm ent-excluir">Excluir</button></div></div>';
+            +'<div class="ent-acoes">'+(pode?'<button class="btn btn-info btn-sm ent-editar">Editar</button> ':'')+(admin?'<button class="btn btn-danger btn-sm ent-excluir">Excluir</button>':'')+'</div></div>';
   });
   h+=entregaFormHtml(cod);
   h+='</div>';
   return h;
 }
 function salvarEntrega(){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   if(obraSemFim()){mostrarToast('⛔ '+msgTravaFim(),'error');return;}
   var nome=document.getElementById('entNome').value.trim();
   if(!nome){mostrarToast('⚠️ Informe o nome da entrega','error');return;}
@@ -1589,6 +1614,7 @@ function salvarEntrega(){
   salvarTudo();renderizarCronograma();mostrarToast('✅ Entrega salva');
 }
 function inconformidadesHtml(cod){
+  var pode=podeGerirObra();
   var list=inconformidadesDe(cod);
   var ci=contarInconformidades(cod);
   var h='<div class="cron-sec"><h4 class="dash-h">Inconformidades e ocorrências</h4>';
@@ -1600,13 +1626,14 @@ function inconformidadesHtml(cod){
       +'<div class="iss-meta">Tipologia: <strong>'+escH(x.tipo||'—')+'</strong> · Qtde: '+fmtInt(x.qtde||0)+' · Aberta em: '+escH(x.data?fmtTs(x.data):'—')+' · Apontada por: '+escH(x.apontadaPor||'—')+'</div>'
       +'<div class="iss-desc">'+escH(x.descricao||'')+'</div>'
       +(x.status==='Resolvida'?'<div class="iss-res">Resolução: '+escH(x.resolucao||'')+' · em '+escH(x.dataResolucao?fmtTs(x.dataResolucao):'—')+'</div>':'')
-      +'<div class="ent-acoes"><button class="btn btn-info btn-sm iss-editar">Editar</button>'+(x.status==='Aberta'?'<button class="btn btn-success btn-sm iss-resolver">Resolver</button>':'')+' <button class="btn btn-danger btn-sm iss-excluir">Excluir</button></div></div>';
+            +'<div class="ent-acoes">'+(pode?'<button class="btn btn-info btn-sm iss-editar">Editar</button>'+(x.status==='Aberta'?'<button class="btn btn-success btn-sm iss-resolver">Resolver</button>':'')+' <button class="btn btn-danger btn-sm iss-excluir">Excluir</button>':'')+'</div></div>';
   });
   h+=issueFormHtml(cod);
   h+='</div>';
   return h;
 }
 function issueFormHtml(cod){
+  if(!podeGerirObra())return '';
   var ed=null;
   if(CRON_EDIT_ISSUE>=0)inconformidades.forEach(function(x){if(x.id===CRON_EDIT_ISSUE)ed=x;});
   var tips=(masterDeCod(cod)||{tipologias:[]}).tipologias;
@@ -1625,6 +1652,7 @@ function issueFormHtml(cod){
   return h;
 }
 function salvarIssue(){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   if(obraSemFim()){mostrarToast('⛔ '+msgTravaFim(),'error');return;}
   var titulo=document.getElementById('issTitulo').value.trim();
   var desc=document.getElementById('issDesc').value.trim();
@@ -1681,6 +1709,61 @@ function ganttObraHtml(cod){
   h+=processosHtml(cod);
   return h;
 }
+/* v4.3: handlers do Cronograma com gate de permissão (espelho do planning = Admin+PCP; excluir entrega = só Admin) */
+function editarEntrega(id){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
+  var e=null;entregas.forEach(function(x){if(x.id===id)e=x;});
+  if(!e)return;
+  CRON_EDIT_ENTREGA=id;CRON_ENTREGA_ITEMS=(e.items||[]).map(function(x){return {tipo:x.tipo,qtde:x.qtde};});
+  renderizarCronograma();
+}
+function excluirEntrega(id){
+  if(!isAdmin()){mostrarToast('⚠️ Sem permissão','error');return;}
+  var e=null;entregas.forEach(function(x){if(x.id===id)e=x;});
+  if(!e)return;
+  if(!confirm('Excluir a entrega "'+e.nome+'"?'))return;
+  entregas=entregas.filter(function(x){return x.id!==id;});
+  regAuditoria('ENTREGA_EXCLUIDA',dadosXML.obra.codigo+' · '+e.nome);
+  salvarTudo();renderizarCronograma();mostrarToast('✅ Entrega excluída');
+}
+function editarIssue(id){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
+  CRON_EDIT_ISSUE=id;renderizarCronograma();
+}
+function resolverIssue(id){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
+  CRON_EDIT_ISSUE=id;renderizarCronograma();
+  var st=document.getElementById('issStatus');if(st)st.value='Resolvida';
+  var r=document.getElementById('issResolucao');if(r)r.focus();
+}
+function excluirIssue(id){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
+  var x=null;inconformidades.forEach(function(y){if(y.id===id)x=y;});
+  if(!x)return;
+  if(!confirm('Excluir o registro "'+x.titulo+'"?'))return;
+  inconformidades=inconformidades.filter(function(y){return y.id!==id;});
+  regAuditoria('INCONFORMIDADE_EXCLUIDA',dadosXML.obra.codigo+' · '+x.titulo);
+  salvarTudo();renderizarCronograma();mostrarToast('✅ Registro excluído');
+}
+function salvarMarco(card){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
+  if(!card)return;
+  var nome=card.dataset.marco;
+  var st=card.querySelector('.marco-status').value;
+  var ini=card.querySelector('.marco-ini').value,fim=card.querySelector('.marco-fim').value;
+  var resp=card.querySelector('.marco-resp').value.trim();
+  var obs=card.querySelector('.marco-obs').value.trim();
+  if(resp.length>120){mostrarToast('⚠️ Responsável com no máximo 120 caracteres','error');return;}
+  if(obs.length>500){mostrarToast('⚠️ Observação com no máximo 500 caracteres','error');return;}
+  if(ini&&fim&&ini>fim){mostrarToast('⚠️ Início do marco posterior ao fim','error');return;}
+  var _stAnt=null;marcos.forEach(function(x){if(x.nome===nome)_stAnt=x.status;});
+  var ach=false;
+  marcos.forEach(function(x){if(x.nome===nome){x.status=st;x.inicio=ini;x.fim=fim;x.responsavel=resp;x.obs=obs;ach=true;}});
+  if(!ach)marcos.push({nome:nome,status:st,inicio:ini,fim:fim,responsavel:resp,obs:obs});
+  regAuditoria('MARCO_SALVO',dadosXML.obra.codigo+' · '+nome+' · '+st);
+  if(st==='Bloqueado'&&_stAnt!=='Bloqueado')emitirNotificacao('marco_bloqueado',{marco:nome,obra:dadosXML.obra.codigo});
+  salvarTudo();renderizarCronograma();mostrarToast('✅ Marco salvo');
+}
 function bindGanttObra(){
   var modo=document.getElementById('cronModo');
   var sel=document.getElementById('cronObraSel');
@@ -1698,24 +1781,7 @@ function bindGanttObra(){
     atualizarEditorDatas();
   }
   document.querySelectorAll('#cronConteudo .marco-salvar').forEach(function(b){
-    b.addEventListener('click',function(){
-      var card=this.closest('.marco-card');if(!card)return;
-      var nome=card.dataset.marco;
-      var st=card.querySelector('.marco-status').value;
-      var ini=card.querySelector('.marco-ini').value,fim=card.querySelector('.marco-fim').value;
-      var resp=card.querySelector('.marco-resp').value.trim();
-      var obs=card.querySelector('.marco-obs').value.trim();
-      if(resp.length>120){mostrarToast('⚠️ Responsável com no máximo 120 caracteres','error');return;}
-      if(obs.length>500){mostrarToast('⚠️ Observação com no máximo 500 caracteres','error');return;}
-      if(ini&&fim&&ini>fim){mostrarToast('⚠️ Início do marco posterior ao fim','error');return;}
-      var _stAnt=null;marcos.forEach(function(x){if(x.nome===nome)_stAnt=x.status;});
-      var ach=false;
-      marcos.forEach(function(x){if(x.nome===nome){x.status=st;x.inicio=ini;x.fim=fim;x.responsavel=resp;x.obs=obs;ach=true;}});
-      if(!ach)marcos.push({nome:nome,status:st,inicio:ini,fim:fim,responsavel:resp,obs:obs});
-      regAuditoria('MARCO_SALVO',dadosXML.obra.codigo+' · '+nome+' · '+st);
-      if(st==='Bloqueado'&&_stAnt!=='Bloqueado')emitirNotificacao('marco_bloqueado',{marco:nome,obra:dadosXML.obra.codigo});
-      salvarTudo();renderizarCronograma();mostrarToast('✅ Marco salvo');
-    });
+    b.addEventListener('click',function(){salvarMarco(this.closest('.marco-card'));});
   });
   var addItem=document.getElementById('entItemAdd');
   if(addItem){
@@ -1733,24 +1799,10 @@ function bindGanttObra(){
     var ce=document.getElementById('entCancelarEdicao');
     if(ce)ce.addEventListener('click',function(){CRON_EDIT_ENTREGA=-1;CRON_ENTREGA_ITEMS=[];renderizarCronograma();});
     document.querySelectorAll('#cronConteudo .ent-editar').forEach(function(b){
-      b.addEventListener('click',function(){
-        var id=+this.closest('.ent-card').dataset.id;
-        var e=null;entregas.forEach(function(x){if(x.id===id)e=x;});
-        if(!e)return;
-        CRON_EDIT_ENTREGA=id;CRON_ENTREGA_ITEMS=(e.items||[]).map(function(x){return {tipo:x.tipo,qtde:x.qtde};});
-        renderizarCronograma();
-      });
+      b.addEventListener('click',function(){editarEntrega(+this.closest('.ent-card').dataset.id);});
     });
     document.querySelectorAll('#cronConteudo .ent-excluir').forEach(function(b){
-      b.addEventListener('click',function(){
-        var id=+this.closest('.ent-card').dataset.id;
-        var e=null;entregas.forEach(function(x){if(x.id===id)e=x;});
-        if(!e)return;
-        if(!confirm('Excluir a entrega "'+e.nome+'"?'))return;
-        entregas=entregas.filter(function(x){return x.id!==id;});
-        regAuditoria('ENTREGA_EXCLUIDA',dadosXML.obra.codigo+' · '+e.nome);
-        salvarTudo();renderizarCronograma();mostrarToast('✅ Entrega excluída');
-      });
+      b.addEventListener('click',function(){excluirEntrega(+this.closest('.ent-card').dataset.id);});
     });
   }
   var soAb=document.getElementById('issSoAbertas');
@@ -1761,31 +1813,19 @@ function bindGanttObra(){
     var ic=document.getElementById('issCancelarEdicao');
     if(ic)ic.addEventListener('click',function(){CRON_EDIT_ISSUE=-1;renderizarCronograma();});
     document.querySelectorAll('#cronConteudo .iss-editar').forEach(function(b){
-      b.addEventListener('click',function(){CRON_EDIT_ISSUE=+this.closest('.iss-item').dataset.id;renderizarCronograma();});
+      b.addEventListener('click',function(){editarIssue(+this.closest('.iss-item').dataset.id);});
     });
     document.querySelectorAll('#cronConteudo .iss-resolver').forEach(function(b){
-      b.addEventListener('click',function(){
-        var id=+this.closest('.iss-item').dataset.id;
-        CRON_EDIT_ISSUE=id;renderizarCronograma();
-        var st=document.getElementById('issStatus');if(st)st.value='Resolvida';
-        var r=document.getElementById('issResolucao');if(r)r.focus();
-      });
+      b.addEventListener('click',function(){resolverIssue(+this.closest('.iss-item').dataset.id);});
     });
     document.querySelectorAll('#cronConteudo .iss-excluir').forEach(function(b){
-      b.addEventListener('click',function(){
-        var id=+this.closest('.iss-item').dataset.id;
-        var x=null;inconformidades.forEach(function(y){if(y.id===id)x=y;});
-        if(!x)return;
-        if(!confirm('Excluir o registro "'+x.titulo+'"?'))return;
-        inconformidades=inconformidades.filter(function(y){return y.id!==id;});
-        regAuditoria('INCONFORMIDADE_EXCLUIDA',dadosXML.obra.codigo+' · '+x.titulo);
-        salvarTudo();renderizarCronograma();mostrarToast('✅ Registro excluído');
-      });
+      b.addEventListener('click',function(){excluirIssue(+this.closest('.iss-item').dataset.id);});
     });
   }
   var procSalvar=document.getElementById('procSalvar');
   if(procSalvar){
     procSalvar.addEventListener('click',function(){
+      if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
       var ativos=['liberada','fabricada','expedida','instalada'];
       var ordem=ETAPAS_TODAS.slice();
       document.querySelectorAll('#cronConteudo .proc-opt-cb').forEach(function(cb){if(cb.checked&&ordem.indexOf(cb.dataset.stage)>-1)ativos.push(cb.dataset.stage);});
@@ -1810,6 +1850,8 @@ function bindGanttObra(){
 document.addEventListener('DOMContentLoaded',function(){
   var b=document.getElementById('relImprimirBtn');
   if(b&&!b.dataset.v4b){b.dataset.v4b='1';b.addEventListener('click',function(){window.print();});}
+  var c=document.getElementById('relCsvBtn');
+  if(c&&!c.dataset.v4b){c.dataset.v4b='1';c.addEventListener('click',exportarRelatorioCSV);}
 });
 
 
@@ -1879,6 +1921,8 @@ function renderizarRelatorio(){
 }
 
 /* ===== v4: aba Agenda (instalações realizadas + agendamentos de instalação) ===== */
+var AG_EDIT_ID=null;
+var AGENDA_STATUS=['Planejada','Confirmada','Em andamento','Concluída','Cancelada'];
 function renderizarAgenda(){
   var box=document.getElementById('agendaConteudo');if(!box)return;
   var cod=dadosXML.obra.codigo;
@@ -1886,6 +1930,7 @@ function renderizarAgenda(){
   var lib=liberacoesDe(cod).filter(function(r){return r.stage==='instalada'&&!r.cancelada;});
   var ag=agendaDe(cod).slice().sort(function(a,b){return (a.data||'').localeCompare(b.data||'');});
   var pode=hasPerm('liberar');
+  var podeGerir=podeGerirObra();
   var h='<div class="cron-obra-h"><div><strong>'+escH(c.nome)+'</strong> ('+escH(cod)+')</div><div>Instalações realizadas: <strong>'+fmtInt(lib.reduce(function(s,r){return s+Number(r.qtde||0);},0))+' un</strong> · Agendamentos: <strong>'+ag.length+'</strong></div></div>';
   h+='<h4 class="dash-h">Instalações realizadas</h4>';
   if(!lib.length)h+='<div class="pos-vazio">Nenhuma instalação registrada ainda.</div>';
@@ -1903,23 +1948,35 @@ function renderizarAgenda(){
   }
   h+='<h4 class="dash-h">Agendamentos de instalação</h4>';
   if(!ag.length)h+='<div class="pos-vazio">Nenhum agendamento.</div>';
-  else{h+='<div class="table-scroll-x"><table><thead><tr><th>Data</th><th>Tipologia</th><th style="text-align:center;">Qtde</th><th>Responsável</th><th>Status</th><th>Ações</th></tr></thead><tbody>';
+  else{h+='<div class="table-scroll-x"><table><thead><tr><th>Data</th><th>Tipologia</th><th style="text-align:center;">Qtde</th><th>Responsável</th><th>Status</th><th>Observação</th><th>Ações</th></tr></thead><tbody>';
     ag.forEach(function(a){
-      h+='<tr><td>'+escH(fmtTs(a.data))+'</td><td><strong>'+escH(a.tipo)+'</strong> '+escH(getDescricao(a.tipo))+'</td><td style="text-align:center;">'+fmtInt(a.qtde)+'</td><td>'+escH(a.responsavel||'—')+'</td><td>'+escH(a.status)+'</td><td>';
-      if(pode&&a.status==='Agendado')h+='<button class="btn btn-success btn-sm" data-ag-realizar="'+a.id+'">Realizar</button> <button class="btn btn-danger btn-sm" data-ag-cancelar="'+a.id+'">Cancelar</button>';
-      else if(a.status==='Realizado')h+='<span class="badge-extra" style="background:#e8f8ee;color:#1a7a4a;">✓ Realizado</span>';
-      else if(a.status==='Cancelado')h+='<span class="badge-extra" style="background:#fdecea;color:#c0392b;">Cancelado</span>';
+      h+='<tr><td>'+escH(fmtTs(a.data))+'</td><td><strong>'+escH(a.tipo)+'</strong> '+escH(getDescricao(a.tipo))+'</td><td style="text-align:center;">'+fmtInt(a.qtde)+'</td><td>'+escH(a.responsavel||'—')+'</td><td>'+escH(a.status)+'</td><td>'+escH(a.obs||'—')+'</td><td>';
+      if(pode){
+        if(a.status==='Concluída')h+='<span class="badge-extra" style="background:#e8f8ee;color:#1a7a4a;">✓ Concluída</span> ';
+        else if(a.status==='Cancelada')h+='<span class="badge-extra" style="background:#fdecea;color:#c0392b;">Cancelada</span> ';
+        else h+='<button class="btn btn-success btn-sm" data-ag-realizar="'+a.id+'">Realizar</button> <button class="btn btn-danger btn-sm" data-ag-cancelar="'+a.id+'">Cancelar</button> ';
+        if(podeGerir)h+='<button class="btn btn-info btn-sm" data-ag-editar="'+a.id+'">Editar</button> <button class="btn btn-danger btn-sm" data-ag-excluir="'+a.id+'">Excluir</button>';
+      }else{
+        if(a.status==='Concluída')h+='<span class="badge-extra" style="background:#e8f8ee;color:#1a7a4a;">✓ Concluída</span>';
+        else if(a.status==='Cancelada')h+='<span class="badge-extra" style="background:#fdecea;color:#c0392b;">Cancelada</span>';
+      }
       h+='</td></tr>';
     });
     h+='</tbody></table></div>';}
   if(pode){
-    var tipos=(c.tip||[]).map(function(t){return t.tipo;});
-    h+='<div class="ent-form"><h5>Agendar instalação</h5><div class="cron-ed">'
-      +'<label>Data <input type="date" id="agData" class="sel-obra" value="'+(new Date().toISOString().slice(0,10))+'"></label>'
-      +'<label>Tipologia <select id="agTipo" class="sel-obra">'+tipos.map(function(t){return '<option value="'+escH(t)+'">'+escH(t)+' — '+escH(getDescricao(t))+'</option>';}).join('')+'</select></label>'
-      +'<label>Qtde <input type="number" id="agQtde" class="sel-obra" value="1" min="1" style="width:80px;"></label>'
-      +'<label>Responsável <input type="text" id="agResp" class="sel-obra" value="'+escH((usuarioLogado&&usuarioLogado.nome)||'')+'"></label>'
-      +'<button class="btn btn-primary" id="agSalvarBtn"><i class="fas fa-plus"></i> Agendar</button>'
+    var tipos=getTipos(); /* v4.3: c.tip é o mapa de datas do cronograma (não existe no master) — o select ficava vazio e Agendar sempre falhava */
+    var ed=null;
+    if(AG_EDIT_ID){ag.forEach(function(x){if(x.id===AG_EDIT_ID)ed=x;});if(!ed)AG_EDIT_ID=null;}
+    var stEd=ed?(ed.status||'Planejada'):'Planejada';
+    h+='<div class="ent-form"><h5>'+(ed?'Editar agendamento':'Agendar instalação')+'</h5><div class="cron-ed">'
+      +'<label>Data <input type="date" id="agData" class="sel-obra" value="'+(ed?escH(ed.data||''):(new Date().toISOString().slice(0,10)))+'"></label>'
+      +'<label>Tipologia <select id="agTipo" class="sel-obra">'+tipos.map(function(t){return '<option value="'+escH(t)+'"'+(ed&&ed.tipo===t?' selected':'')+'>'+escH(t)+' — '+escH(getDescricao(t))+'</option>';}).join('')+'</select></label>'
+      +'<label>Qtde <input type="number" id="agQtde" class="sel-obra" value="'+(ed?ed.qtde:1)+'" min="1" style="width:80px;"></label>'
+      +'<label>Responsável <input type="text" id="agResp" class="sel-obra" value="'+escH(ed?ed.responsavel||'':((usuarioLogado&&usuarioLogado.nome)||''))+'"></label>'
+      +'<label>Status <select id="agStatus" class="sel-obra">'+AGENDA_STATUS.map(function(x){return '<option value="'+x+'"'+(x===stEd?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label>'
+      +'<label>Observação <input type="text" id="agObs" class="sel-obra" maxlength="200" placeholder="Observação (máx. 200)" value="'+escH(ed?ed.obs||'':'')+'"></label>'
+      +'<button class="btn btn-primary" id="agSalvarBtn"><i class="fas fa-plus"></i> '+(ed?'Salvar alterações':'Agendar')+'</button>'
+      +(ed?' <button class="btn" id="agCancelarEdBtn">Cancelar edição</button>':'')
       +'</div><div class="lone-note" style="margin-top:8px;">"Realizar" apenas marca o agendamento como feito — não lança unidades (os totais de instalação continuam vindo dos lançamentos).</div></div>';
   }else{
     h+='<div class="lote-nota">Seu perfil não tem permissão para agendar instalações (somente quem pode liberar).</div>';
@@ -1927,28 +1984,66 @@ function renderizarAgenda(){
   box.innerHTML=h;
   if(pode){
     var sv=document.getElementById('agSalvarBtn');
-    if(sv)sv.onclick=function(){
-      var d=document.getElementById('agData').value,t=document.getElementById('agTipo').value,q=parseInt(document.getElementById('agQtde').value,10),r=document.getElementById('agResp').value.trim();
-      if(!d||!t||!(q>0)){mostrarToast('Preencha data, tipologia e quantidade.','error');return;}
-      var arr=agendaDe(cod);
-      var id=arr.length?Math.max.apply(null,arr.map(function(x){return x.id||0;}))+1:1;
-      arr.push({id:id,data:d,tipo:t,qtde:q,responsavel:r||(usuarioLogado&&usuarioLogado.nome)||'—',status:'Agendado',criadoEm:agoraLocal(),criadoPor:(usuarioLogado&&usuarioLogado.nome)||'Sistema'});
-      salvarV4();regAuditoria('Agenda',cod,'Agendamento criado: '+t+' × '+q+' em '+fmtTs(d),usuarioLogado?usuarioLogado.nome:'Sistema');
-      mostrarToast('Instalação agendada para '+fmtTs(d)+'.','success');renderizarAgenda();
-    };
+    if(sv)sv.onclick=function(){salvarAgendamento();};
+    var ce=document.getElementById('agCancelarEdBtn');
+    if(ce)ce.onclick=function(){AG_EDIT_ID=null;renderizarAgenda();};
     box.querySelectorAll('[data-ag-realizar]').forEach(function(b){
       b.onclick=function(){
         var arr=agendaDe(cod),it=null;arr.forEach(function(x){if(String(x.id)===b.dataset.agRealizar)it=x;});
-        if(it){it.status='Realizado';it.realizadoEm=agoraLocal();salvarV4();regAuditoria('Agenda',cod,'Agendamento realizado: '+it.tipo+' × '+it.qtde+' em '+fmtTs(it.data),usuarioLogado?usuarioLogado.nome:'Sistema');mostrarToast('Agendamento marcado como realizado.','success');renderizarAgenda();}
+        if(it){it.status='Concluída';it.realizadoEm=agoraLocal();salvarV4();regAuditoria('AGENDAMENTO_REALIZADO',cod+' · '+it.tipo+' × '+it.qtde+' em '+fmtTs(it.data));mostrarToast('Agendamento marcado como realizado.','success');renderizarAgenda();}
       };
     });
     box.querySelectorAll('[data-ag-cancelar]').forEach(function(b){
       b.onclick=function(){
         var arr=agendaDe(cod),it=null;arr.forEach(function(x){if(String(x.id)===b.dataset.agCancelar)it=x;});
-        if(it&&confirm('Cancelar este agendamento?')){it.status='Cancelado';salvarV4();regAuditoria('Agenda',cod,'Agendamento cancelado: '+it.tipo+' × '+it.qtde+' em '+fmtTs(it.data),usuarioLogado?usuarioLogado.nome:'Sistema');mostrarToast('Agendamento cancelado.','info');renderizarAgenda();}
+        if(it&&confirm('Cancelar este agendamento?')){it.status='Cancelada';salvarV4();regAuditoria('AGENDAMENTO_CANCELADO',cod+' · '+it.tipo+' × '+it.qtde+' em '+fmtTs(it.data));mostrarToast('Agendamento cancelado.','info');renderizarAgenda();}
       };
     });
+    box.querySelectorAll('[data-ag-editar]').forEach(function(b){
+      b.onclick=function(){editarAgendamento(+b.dataset.agEditar);};
+    });
+    box.querySelectorAll('[data-ag-excluir]').forEach(function(b){
+      b.onclick=function(){excluirAgendamento(+b.dataset.agExcluir);};
+    });
   }
+}
+function salvarAgendamento(){
+  if(AG_EDIT_ID){if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}}
+  else if(!hasPerm('liberar')){mostrarToast('⚠️ Sem permissão','error');return;}
+  var cod=dadosXML.obra.codigo;
+  var d=document.getElementById('agData').value,t=document.getElementById('agTipo').value,q=parseInt(document.getElementById('agQtde').value,10),r=document.getElementById('agResp').value.trim();
+  var st=document.getElementById('agStatus').value,obs=document.getElementById('agObs').value.trim();
+  if(!d||!t||!(q>0)){mostrarToast('Preencha data, tipologia e quantidade.','error');return;}
+  if(AGENDA_STATUS.indexOf(st)===-1)st='Planejada';
+  if(obs.length>200){mostrarToast('⚠️ Observação com no máximo 200 caracteres','error');return;}
+  var arr=agendaDe(cod);
+  if(AG_EDIT_ID){
+    var it=null;arr.forEach(function(x){if(x.id===AG_EDIT_ID)it=x;});
+    if(it){
+      it.data=d;it.tipo=t;it.qtde=q;it.responsavel=r||(usuarioLogado&&usuarioLogado.nome)||'—';it.status=st;it.obs=obs;
+      salvarV4();regAuditoria('AGENDAMENTO_EDITADO',cod+' · '+t+' × '+q+' em '+fmtTs(d)+' · '+st);
+      AG_EDIT_ID=null;mostrarToast('Agendamento atualizado.','success');renderizarAgenda();return;
+    }
+    AG_EDIT_ID=null;
+  }
+  var id=arr.length?Math.max.apply(null,arr.map(function(x){return x.id||0;}))+1:1;
+  arr.push({id:id,data:d,tipo:t,qtde:q,responsavel:r||(usuarioLogado&&usuarioLogado.nome)||'—',status:st,obs:obs,criadoEm:agoraLocal(),criadoPor:(usuarioLogado&&usuarioLogado.nome)||'Sistema'});
+  salvarV4();regAuditoria('AGENDAMENTO_CRIADO',cod+' · '+t+' × '+q+' em '+fmtTs(d)+' · '+st);
+  mostrarToast('Instalação agendada para '+fmtTs(d)+'.','success');renderizarAgenda();
+}
+function editarAgendamento(id){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
+  AG_EDIT_ID=id;renderizarAgenda();
+}
+function excluirAgendamento(id){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
+  var cod=dadosXML.obra.codigo;
+  var arr=agendaDe(cod),it=null,idx=-1;arr.forEach(function(x,i){if(x.id===id){it=x;idx=i;}});
+  if(!it)return;
+  if(!confirm('Excluir este agendamento?'))return;
+  arr.splice(idx,1);
+  salvarV4();regAuditoria('AGENDAMENTO_EXCLUIDO',cod+' · '+it.tipo+' × '+it.qtde+' em '+fmtTs(it.data));
+  mostrarToast('Agendamento excluído.','success');renderizarAgenda();
 }
 
 /* ===== v4: banner de data de fim + trava de lançamentos + importação com datas/processos ===== */
@@ -1965,20 +2060,22 @@ function renderizarBannerFim(){
   if(obraCancelada()){box.innerHTML='';return;} /* v4 (T-14): obra cancelada não precisa de prazo — lançamentos já bloqueados */
   var cod=dadosXML.obra.codigo;
   var c=cronogramaDe(cod);
-  var cache=cod+'|'+(c.endDate||'')+'|'+(c.startDate||'');
+  var cache=cod+'|'+(c.endDate||'')+'|'+(c.startDate||'')+'|'+(usuarioLogado?usuarioLogado.tipo:'');
   if(cache===BANNER_FIM_CACHE&&box.innerHTML.trim())return; // preserva o que o usuário já digitou
   BANNER_FIM_CACHE=cache;
   if(!hasPerm('liberar')){box.innerHTML='';return;}
   var semFim=!c.endDate;
   var h='<div class="banner-fim'+(semFim?' banner-fim-aviso':' banner-fim-ok')+'">'
     +(semFim?'<strong>⚠️ Esta obra não tem data de fim.</strong> Lançamentos ficam bloqueados até definir o prazo.':'<strong>Prazo da obra:</strong> '+escH(fmtTs(c.endDate))+'.')
-    +' <label style="font-weight:700;">Data de fim <input type="date" id="bannerFimData" class="sel-obra" style="width:auto;" value="'+escH(c.endDate||'')+'"></label>'
-    +' <button class="btn btn-primary btn-sm" id="bannerFimSalvar"><i class="fas fa-check"></i> Salvar data de fim</button></div>';
+    +(podeGerirObra()?' <label style="font-weight:700;">Data de fim <input type="date" id="bannerFimData" class="sel-obra" style="width:auto;" value="'+escH(c.endDate||'')+'"></label>'
+    +' <button class="btn btn-primary btn-sm" id="bannerFimSalvar"><i class="fas fa-check"></i> Salvar data de fim</button>':'')
+    +'</div>';
   box.innerHTML=h;
   var b=document.getElementById('bannerFimSalvar');
   if(b)b.onclick=salvarDataFim;
 }
 function salvarDataFim(){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   var cod=dadosXML.obra.codigo;
   var c=cronogramaDe(cod);
   var fim=document.getElementById('bannerFimData').value;
@@ -2006,7 +2103,7 @@ function abrirModalImportar(master){
     +'<label>Início (importação) <input type="date" id="impInicio" class="sel-obra" value="'+hj+'"></label>'
     +'<label>Prazo (data de fim) <input type="date" id="impFim" class="sel-obra"></label>'
     +'</div>'
-    +'<div class="lote-nota">O início padrão é a data da importação. Sem prazo, a obra fica "Sem prazo" e os lançamentos ficam bloqueados até definir a data de fim.</div>';
+    +'<div class="lote-nota">O início padrão é a data da importação. A data de fim (prazo de entrega) é obrigatória — sem ela a obra não é importada.</div>';
   document.getElementById('modalImportarObra').classList.add('ativo');
 }
 function fecharModalImportar(){XML_PENDENTE=null;document.getElementById('modalImportarObra').classList.remove('ativo');}
@@ -2014,6 +2111,7 @@ function confirmarImportarObra(){
   var master=XML_PENDENTE;if(!master){fecharModalImportar();return;}
   var ini=document.getElementById('impInicio').value,fim=document.getElementById('impFim').value;
   if(!ini){mostrarToast('Informe a data de início.','error');return;}
+  if(!fim){mostrarToast('⚠️ Informe a data de fim (prazo de entrega) da obra','error');return;}
   if(fim&&fim<ini){mostrarToast('A data de fim ('+fmtTs(fim)+') é anterior ao início ('+fmtTs(ini)+').','error');return;}
   var stages=['liberada'];
   if(document.getElementById('impProcSeparacao').checked)stages.push('separacao');
@@ -2411,36 +2509,70 @@ function renderizarNotificacoes(){
   var mais=document.getElementById('notifMais');if(mais)mais.addEventListener('click',function(){NOTIF_LIMITE+=50;renderizarNotificacoes();});
   var cb=document.getElementById('notifCriarBtn');if(cb)cb.addEventListener('click',criarNotificacaoManual);
 }
-function kanbanCardHtml(opNum,tipo,tecnico,qtde){
-  var contr=getQtdeOriginal(tipo);
-  var pct=contr>0?pct2(qtde/contr*100):'0,00%';
-  return '<div class="kanban-card" data-tipo="'+escH(tipo)+'"><div class="kc-op">'+escH(opNum)+'</div><div class="kc-tipo">'+escH(tipo)+'</div><div class="kc-tec">'+escH(tecnico||'Técnico não informado')+'</div><div class="kc-qtd">'+fmtInt(qtde)+' un. · '+pct+'</div></div>';
+function getDescricaoDe(cod,tipo){var m=masterDeCod(cod);if(!m)return '';var f=null;(m.tipologias||[]).forEach(function(t){if(t.tipo===tipo)f=t;});return f?f.descr:'';}
+function kanbanCardHtml(opNum,tipo,tecnico,qtde,cod,nomeObra){
+  var descr=getDescricaoDe(cod||dadosXML.obra.codigo,tipo)||tipo;
+  var obraHtml=(cod&&nomeObra)?'<div class="kc-obra">'+escH(cod)+' · '+escH(nomeObra)+'</div>':'';
+  return '<div class="kanban-card" data-tipo="'+escH(tipo)+'" data-cod="'+escH(cod||'')+'"><div class="kc-op" title="'+escH(descr)+'">'+escH(descr)+'</div><div class="kc-tipo">'+escH(tipo)+' · '+escH(opNum)+'</div><div class="kc-tec">'+escH(tecnico||'Técnico não informado')+'</div><div class="kc-qtd">'+fmtInt(qtde)+' un.</div>'+obraHtml+'</div>';
 }
+var KANBAN_FILTRO='';
 function renderizarKanban(){
   var box=document.getElementById('kanbanConteudo');if(!box)return;
-  var cod=dadosXML.obra.codigo;
+  var codAtual=dadosXML.obra.codigo;
+  if(!KANBAN_FILTRO)KANBAN_FILTRO=codAtual;
+  var todas=KANBAN_FILTRO==='todas';
+  var mapa=obrasMap();
+  var codsTodas=Object.keys(mapa).sort();
+  var cods=todas?codsTodas:[KANBAN_FILTRO];
+  if(!todas&&!mapa[KANBAN_FILTRO]){KANBAN_FILTRO=codAtual;cods=[codAtual];todas=false;}
+  var fontes=[];
+  cods.forEach(function(c){
+    var ld=(c===codAtual)?{liberacoes:liberacoes,opsAvulsas:opsAvulsas}:localDataFor(c);
+    var m=masterDeCod(c);
+    fontes.push({cod:c,nome:m?m.obra.nome:c,lib:(ld.liberacoes||[]).filter(function(r){return !r.cancelada;}),ops:(ld.opsAvulsas||[]).filter(function(o){return !o.cancelada;})});
+  });
   var cols=['liberada','fabricada','expedida','instalada'];
   var presentes={};
-  liberacoes.forEach(function(r){if(!r.cancelada&&r.stage&&cols.indexOf(r.stage)===-1)presentes[r.stage]=true;});
+  fontes.forEach(function(f){f.lib.forEach(function(r){if(r.stage&&cols.indexOf(r.stage)===-1)presentes[r.stage]=true;});});
   ETAPAS_TODAS.forEach(function(s){if(presentes[s]&&cols.indexOf(s)===-1)cols.push(s);});
+  cols.push('sem-etapa');
+  function cardsDe(st){
+    var out=[];
+    fontes.forEach(function(f){
+      f.lib.forEach(function(r){
+        var stg=r.stage||'';
+        if(st==='sem-etapa'){if(stg!=='')return;}
+        else if(stg!==st)return;
+        out.push({r:r,cod:f.cod,nome:f.nome});
+      });
+    });
+    return out;
+  }
+  var total=0;
+  fontes.forEach(function(f){total+=f.lib.length+f.ops.length;});
   var h='<div class="table-header-actions"><div><div class="eyebrow">FLUXO OPERACIONAL</div><h3><i class="fas fa-columns"></i> Kanban de OPs</h3><div class="lote-nota">Visualização rápida das ordens por etapa da obra.</div></div></div>';
-  h+='<div class="lote-nota">Obra: <strong>'+escH(dadosXML.obra.nome)+'</strong> · '+escH(cod)+'</div>';
+  h+='<div class="lote-nota">Obra: <select id="kanbanFiltro" class="sel-obra" style="width:auto;"><option value="todas"'+(todas?' selected':'')+'>Todas as obras</option>'+codsTodas.map(function(c){return '<option value="'+escH(c)+'"'+(KANBAN_FILTRO===c?' selected':'')+'>'+escH(c)+' · '+escH(mapa[c])+'</option>';}).join('')+'</select> · <strong>'+fmtInt(total)+' cartões</strong></div>';
   h+='<div class="kanban-wrap"><div class="kanban-cols">';
   cols.forEach(function(st){
-    var cards=liberacoes.filter(function(r){return !r.cancelada&&(r.stage||'liberada')===st;});
-    h+='<div class="kanban-col" data-stage="'+st+'"><div class="kanban-col-h"><span>'+escH(ETAPA_NOME[st]||st)+'</span><span class="n">'+cards.length+'</span></div>';
-    if(!cards.length)h+='<div class="kanban-vazio">Nenhuma OP nesta etapa.</div>';
-    cards.forEach(function(r){h+=kanbanCardHtml(r.opNum||'—',r.tipo,r.tecnico,r.qtde);});
+    var cards=cardsDe(st);
+    var label=st==='sem-etapa'?'Sem etapa':(ETAPA_NOME[st]||st);
+    h+='<div class="kanban-col" data-stage="'+st+'"><div class="kanban-col-h"><span>'+escH(label)+'</span><span class="n">'+cards.length+'</span></div>';
+    if(!cards.length)h+='<div class="kanban-vazio">Nada nesta etapa.</div>';
+    cards.forEach(function(x){h+=kanbanCardHtml(x.r.opNum||'—',x.r.tipo,x.r.tecnico,x.r.qtde,todas?x.cod:null,todas?x.nome:null);});
     h+='</div>';
   });
-  var avulsas=opsAvulsas.filter(function(o){return !o.cancelada;});
+  var avulsas=[];
+  fontes.forEach(function(f){f.ops.forEach(function(o){avulsas.push({o:o,cod:f.cod,nome:f.nome});});});
   h+='<div class="kanban-col" data-stage="opr"><div class="kanban-col-h"><span>OPR / OPC</span><span class="n">'+avulsas.length+'</span></div>';
-  if(!avulsas.length)h+='<div class="kanban-vazio">Nenhuma OP nesta etapa.</div>';
-  avulsas.forEach(function(o){h+=kanbanCardHtml(o.num||'—',o.tipo,o.tecnico,o.qtde);});
+  if(!avulsas.length)h+='<div class="kanban-vazio">Nada nesta etapa.</div>';
+  avulsas.forEach(function(x){h+=kanbanCardHtml(x.o.num||'—',x.o.tipo,x.o.tecnico,x.o.qtde,todas?x.cod:null,todas?x.nome:null);});
   h+='</div></div></div>';
   box.innerHTML=h;
+  var sel=document.getElementById('kanbanFiltro');
+  if(sel)sel.addEventListener('change',function(){KANBAN_FILTRO=this.value;renderizarKanban();});
   box.querySelectorAll('.kanban-card').forEach(function(c){c.addEventListener('click',function(){
-    var tipo=this.dataset.tipo;if(!tipo)return;
+    var tipo=this.dataset.tipo,cod=this.dataset.cod;
+    if(cod&&cod!==dadosXML.obra.codigo)trocarObra(cod);
     var b=document.querySelector('.tab-btn[data-tab="tab-producao"]');if(b)b.click();
     var card=document.querySelector('.flip-card[data-tipo="'+tipo+'"]');
     if(card){card.classList.add('flipped');try{card.scrollIntoView({block:'nearest'});}catch(e){}}
@@ -2614,6 +2746,8 @@ var BLOQ='🔒 Demonstração: esta ação está desativada.';
 try{if(localStorage.getItem('fg_demo_v')!==VER){Object.keys(SEED).forEach(function(k){localStorage.setItem(k,SEED[k]);});localStorage.setItem('fg_demo_v',VER);}}catch(e){}
 /* v4.2: semeadura aditiva (VER mantido em demo-2026-11-10-v4) — só cria as chaves novas que faltam; nunca sobrescreve */
 try{if(!localStorage.getItem('fg_demo_v42')){if(!localStorage.getItem('fg_notificacoes'))localStorage.setItem('fg_notificacoes',JSON.stringify(NOTIFICACOES_SEED));['FS2026-00-0002','FS2026-00-0003','FS2026-00-0006','FS2026-00-0007','FS2026-00-0008','FS2026-00-0009'].forEach(function(c){var k='fg_anexos_'+c;if(!localStorage.getItem(k))localStorage.setItem(k,'[]');});localStorage.setItem('fg_demo_v42','1');}}catch(e){}
+/* v4.3: migração aditiva (VER mantido em demo-2026-11-10-v4) — Agenda: obs='' e status no novo vocabulário; nunca sobrescreve */
+try{if(!localStorage.getItem('fg_demo_v43')){['FS2026-00-0002','FS2026-00-0003','FS2026-00-0006','FS2026-00-0007','FS2026-00-0008','FS2026-00-0009'].forEach(function(c){var k='fg_agenda_'+c;try{var a=JSON.parse(localStorage.getItem(k)||'[]');var mudou=false;a.forEach(function(it){if(it.obs===undefined){it.obs='';mudou=true;}if(!it.status){it.status='Planejada';mudou=true;}else if(it.status==='Agendado'){it.status='Planejada';mudou=true;}else if(it.status==='Realizado'){it.status='Concluída';mudou=true;}else if(it.status==='Cancelado'){it.status='Cancelada';mudou=true;}});if(mudou)localStorage.setItem(k,JSON.stringify(a));}catch(e){}});localStorage.setItem('fg_demo_v43','1');}}catch(e){}
 /* nunca falar com servidor */
 try{localStorage.removeItem('fg_sync_url');}catch(e){}
 SYNC_URL='';
