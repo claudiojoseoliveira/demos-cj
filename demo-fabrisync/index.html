@@ -233,7 +233,7 @@ tr.op-cancelada td small{text-decoration:none!important;display:inline-block}
 @media(max-width:600px){.modal-resumo .modal-box{overflow-x:auto}.modal-resumo table{font-size:.66rem}.modal-resumo td,.modal-resumo th{padding:4px 5px}}
 .logo-login img{width:min(340px,82%);height:auto;display:block;border-radius:20px;box-shadow:0 8px 26px rgba(13,43,100,.35)}
 .logo-header img{height:60px;width:auto;display:block;border-radius:10px}
-#resetBtn,#resetOpsBtn,#repoCfgBtn,#trocarSenhaBtn,#restoreBtn,#sairBtn{display:none!important}
+#repoCfgBtn,#trocarSenhaBtn,#sairBtn{display:none!important} /* v4.4 (R-28): reset/restore expostos p/ Admin via vis map; repoCfg/trocarSenha/sair seguem ocultos */
 #demoBar{position:fixed;right:12px;bottom:12px;z-index:99999;display:flex;gap:8px;align-items:center;background:rgba(13,43,100,.94);color:#fff;font:600 12px/1 "Segoe UI",Arial,sans-serif;padding:9px 12px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.35)}
 #demoBar b{background:#f5b301;color:#1b2a41;border-radius:999px;padding:4px 9px;letter-spacing:.06em;font-size:11px}
 #demoBar button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:5px 11px;font:inherit;cursor:pointer}
@@ -473,7 +473,7 @@ tr.op-cancelada td small{text-decoration:none!important;display:inline-block}
 <input type="file" id="loteInput" accept=".csv,.xls,.xlsx" style="display:none">
 <button class="btn btn-danger" id="resetBtn"><i class="fas fa-trash-alt"></i> Reiniciar</button>
 </div></div></div>
-<div class="cards-scroll"><div class="cards-grid" id="cardsContainer"></div></div><div id="anexosBox"></div><input type="file" id="anexoInput" accept="image/*,.pdf" style="display:none">
+<div class="cards-scroll"><div class="cards-grid" id="cardsContainer"></div></div><div id="anexosBox"></div><input type="file" id="anexoInput" accept="image/*,.pdf,.xlsx,.xls,.csv,.docx" style="display:none">
 </div>
 <div class="tab-content" id="tab-ops"><div class="table-container">
 <div class="table-header-actions"><h3><i class="fas fa-tools"></i> OPR (retrabalho) e OPC (complementar)</h3>
@@ -767,7 +767,7 @@ function parseNumX(v){if(!v)return 0;v=String(v).trim();if(v.indexOf(',')>-1)v=v
 function extrairObraDeXml(xmlStr){var parser=new DOMParser();var doc=parser.parseFromString(xmlStr,'text/xml');var err=doc.querySelector('parsererror');if(err)throw new Error('XML inválido');function g(el,s){if(!el)return '';var n=el.querySelector(s);return n?n.textContent.trim():'';}function gf(el,sels){if(!el)return '';for(var i=0;i<sels.length;i++){var n=el.querySelector(sels[i]);if(n&&n.textContent.trim())return n.textContent.trim();}return '';}function gDirect(el,names){if(!el||!el.children)return '';for(var i=0;i<el.children.length;i++){var tg=el.children[i].tagName?el.children[i].tagName.toUpperCase():'';for(var j=0;j<names.length;j++){if(tg===names[j]&&el.children[i].textContent.trim())return el.children[i].textContent.trim();}}return '';}function campoUnidade(node,kws){var tags=[];if(node.children)for(var i=0;i<node.children.length;i++)tags.push({n:(node.children[i].tagName||'').toUpperCase(),v:(node.children[i].textContent||'').trim()});if(node.attributes)for(var j=0;j<node.attributes.length;j++)tags.push({n:(node.attributes[j].name||'').toUpperCase(),v:String(node.attributes[j].value).trim()});for(var a=0;a<tags.length;a++)for(var k=0;k<kws.length;k++)if(tags[a].n.indexOf(kws[k])!==-1&&tags[a].n.indexOf('UNIT')!==-1&&tags[a].v)return tags[a].v;for(a=0;a<tags.length;a++)for(k=0;k<kws.length;k++)if(tags[a].n.indexOf(kws[k])!==-1&&tags[a].v)return tags[a].v;return '';}function dimsFromDescr(d){var mm=String(d||'').match(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/i);return mm?parseNumX(mm[1])*parseNumX(mm[2]):0;}var KW_AREA=['AREA','M2','METR'],KW_PESO=['PESO','KG','MASSA'];var obra=doc.querySelector('DADOS_OBRA'),cliente=doc.querySelector('DADOS_CLIENTE'),tiposNodes=doc.querySelectorAll('TIPOLOGIA');if(!obra)throw new Error('Tag DADOS_OBRA não encontrada');xmlAvisos=[];if(!g(obra,'CODIGO'))throw new Error('XML sem o código da obra (tag CODIGO vazia) — importação recusada');var endereco=gf(obra,['ENDERECO_OBRA END_LOGR','END_LOGR','ENDERECO','LOGRADOURO']);var num=gf(obra,['NUMERO','END_NUMERO']),bairro=gf(obra,['BAIRRO','END_BAIRRO']),cidade=gf(obra,['CIDADE','END_CIDADE','MUNICIPIO']),uf=gf(obra,['UF','END_UF']),cep=gf(obra,['CEP','END_CEP']);var endFull=endereco+(num?', '+num:'')+(bairro?' · '+bairro:'')+(cidade?' · '+cidade:'')+(uf?'/'+uf:'')+(cep?' - CEP '+cep:'');var tipologias=[],sumA=0,sumP=0;tiposNodes.forEach(function(node){var tipo=g(node,'TIPO').toUpperCase().replace(/\s+/g,'')||'N/A',qtde=parseInt(g(node,'QTDE'))||0;var larg=parseNumX(campoUnidade(node,['LARGURA','LARG'])),alt=parseNumX(campoUnidade(node,['ALTURA','ALT']));var areaUnit=parseNumX(campoUnidade(node,KW_AREA));if(!areaUnit&&larg&&alt)areaUnit=(larg*alt)/1000000;if(!areaUnit){var dd=dimsFromDescr(g(node,'DESCR'));if(dd)areaUnit=dd/1000000;}var pesoUnit=parseNumX(campoUnidade(node,KW_PESO));sumA+=areaUnit*qtde;sumP+=pesoUnit*qtde;xmlChecaTip(tipo,qtde,larg,alt,areaUnit,pesoUnit);var _dup=null;tipologias.forEach(function(x){if(x.tipo===tipo)_dup=x;});if(_dup&&qtde>0){_dup.qtde+=qtde;xmlAvisos.push('Tipologia '+tipo+' aparece mais de uma vez no XML — quantidades somadas ('+_dup.qtde+' un).');return;}if(tipo&&qtde>0)tipologias.push({tipo:tipo,qtde:qtde,descr:g(node,'DESCR')||'',local:g(node,'LOCALIZACAO')||'N/A',areaUnit:areaUnit,pesoUnit:pesoUnit,largura:larg,altura:alt,linha:g(node,'LINHA'),grupo:g(node,'GRUPO'),codesqd:g(node,'CODESQD'),projetista:g(node,'PROJETISTA'),cor:g(node,'COD_TRAT_PERF'),tratamento:g(node,'TRAT_PERF'),descrVidro:g(node,'DESCR_VIDRO')});});if(!tipologias.length)throw new Error('Nenhuma tipologia válida');return {obra:{codigo:g(obra,'CODIGO')||'N/A',nome:g(obra,'NOME')||'Sem nome',endereco:endFull,vendedor:gf(obra,['VENDEDOR','VENDEDOR_NOME']),perfis:gf(obra,['PERFIS','PERFIL','COR_PERFIL','PERFIS_COR','COR_PERF']),componentes:gf(obra,['COMPONENTES','COR_COMPONENTES','COMPONENTE','COR_COMP']),areaTotal:sumA||parseNumX(gf(obra,['AREA_TOTAL','AREATOTAL']))||parseNumX(gDirect(obra,['AREA','AREA_M2','AREAM2'])),pesoTotal:sumP||parseNumX(gf(obra,['PESO_TOTAL','PESOTOTAL']))||parseNumX(gDirect(obra,['PESO','PESO_KG','PESOKG']))},cliente:{nome:g(cliente,'NOME')||'N/A',cnpj:g(cliente,'CNPJ_CPF')||'',cidade:gf(cliente,['CIDADE','END_CIDADE','MUNICIPIO'])},tipologias:tipologias};}
 function regAuditoria(acao,detalhe){auditoria.push({ts:agoraLocal(),user:usuarioLogado?usuarioLogado.usuario:'—',acao:acao,detalhe:detalhe||''});if(auditoria.length>2000)auditoria=auditoria.slice(-2000);}
 function mergeAuditoria(a,b){var keys={};var out=[];a.concat(b).forEach(function(e){var k=String(e.ts||'')+'|'+(e.user||'')+'|'+(e.acao||'')+'|'+(e.detalhe||'');if(!keys[k]){keys[k]=true;out.push(e);}});out.sort(function(x,y){return String(x.ts).localeCompare(String(y.ts));});return out.slice(-2000);}
-function renderizarAuditoria(f){var tb=document.getElementById('audBody');if(!tb)return;var ff=(f||'').toLowerCase();var list=auditoria.slice().reverse();if(ff)list=list.filter(function(e){return (e.user||'').toLowerCase().indexOf(ff)>-1||(e.acao||'').toLowerCase().indexOf(ff)>-1||(e.detalhe||'').toLowerCase().indexOf(ff)>-1;});var h='';list.slice(0,500).forEach(function(e){h+='<tr><td style="white-space:nowrap;">'+escH(fmtTs(e.ts))+'</td><td>'+escH(e.user||'—')+'</td><td><strong>'+escH(e.acao)+'</strong></td><td>'+escH(e.detalhe||'')+'</td></tr>';});tb.innerHTML=h||'<tr><td colspan="4" style="text-align:center;color:#8a9bb0;font-style:italic;">Nenhum evento de auditoria</td></tr>';}
+function renderizarAuditoria(f){var tb=document.getElementById('audBody');if(!tb)return;if(!obraVisivel(dadosXML.obra.codigo)){tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#999;">Sem permissão para ver a auditoria desta obra.</td></tr>';return;}var ff=(f||'').toLowerCase();var list=auditoria.slice().reverse();if(ff)list=list.filter(function(e){return (e.user||'').toLowerCase().indexOf(ff)>-1||(e.acao||'').toLowerCase().indexOf(ff)>-1||(e.detalhe||'').toLowerCase().indexOf(ff)>-1;});var h='';list.slice(0,500).forEach(function(e){h+='<tr><td style="white-space:nowrap;">'+escH(fmtTs(e.ts))+'</td><td>'+escH(e.user||'—')+'</td><td><strong>'+escH(e.acao)+'</strong></td><td>'+escH(e.detalhe||'')+'</td></tr>';});tb.innerHTML=h||'<tr><td colspan="4" style="text-align:center;color:#8a9bb0;font-style:italic;">Nenhum evento de auditoria</td></tr>';}
 function exportarAudCSV(){var rows=[['data_hora','usuario','acao','detalhe']];auditoria.forEach(function(e){rows.push([e.ts,e.user,e.acao,e.detalhe]);});var csv='\uFEFF'+rows.map(function(r){return r.map(function(c2){c2=String(c2==null?'':c2);if(/[";\n]/.test(c2))c2='"'+c2.replace(/"/g,'""')+'"';return c2;}).join(';');}).join('\n');var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='auditoria_'+dadosXML.obra.codigo+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);regAuditoria('AUDITORIA_EXPORTADA','');salvarTudo();mostrarToast('✅ Auditoria exportada em CSV');}
 function exportarRelatorioCSV(){
   var cod=dadosXML.obra.codigo;
@@ -820,7 +820,7 @@ input.addEventListener('blur',function(){setTimeout(function(){drop.classList.re
 }
 function reconciliarSessao(){if(!usuarioLogado)return;var match=null;usuarios.forEach(function(u){if(u.usuario===usuarioLogado.usuario)match=u;});if(match){if(match.ativo===false){usuarioLogado=null;return;}usuarioLogado=match;}else{usuarioLogado={id:usuarioLogado.id||9000,usuario:usuarioLogado.usuario,senha:usuarioLogado.senha,tipo:usuarioLogado.tipo,perms:usuarioLogado.perms,ativo:true};}}
 function aplicarMaster(master){dadosXML=master;obrasRegistry[master.obra.codigo]=master;salvarRegistry();liberacoes=[];opsAvulsas=[];tecnicos=[];tecInfo={};metas={};auditoria=[];lotePendente=[];loteTecNovos=[];syncState.lastRemote=0;carregarTudo();reconciliarSessao();preencherLoginUsuarios();preencherSwitch();puxarInicial(function(){atualizarLoginSyncInfo();});if(usuarioLogado){document.getElementById('loginOverlay').classList.add('hidden');document.getElementById('app').style.display='flex';iniciarApp();mostrarToast('🏗️ Obra ativa: '+master.obra.codigo+' (sessão mantida)');}else{document.getElementById('app').style.display='none';document.getElementById('loginOverlay').classList.remove('hidden');document.getElementById('loginPass').value='';mostrarToast('🏗️ Obra ativa: '+master.obra.codigo);}}
-function trocarObra(codigo){if(!codigo||codigo===dadosXML.obra.codigo)return;if(KANBAN_FILTRO&&KANBAN_FILTRO!=='todas')KANBAN_FILTRO=''; /* v4.3: filtro de obra específica acompanha a obra selecionada; 'Todas' é escolha explícita e fica */if(obrasRegistry[codigo]){aplicarMaster(obrasRegistry[codigo]);return;}if(SYNC_URL){syncStatus('wait');fetchCloudJSON(SYNC_URL+'?obra='+encodeURIComponent(codigo)).then(function(j){if(j&&j.master)aplicarMaster(j.master);else mostrarToast('⚠️ Obra sem dados-mestre na nuvem','error');}).catch(function(err){mostrarToast(mensagemErroNuvem(err),'error');});}else{mostrarToast('⚠️ Sem nuvem: importe o XML da obra','error');}}
+function trocarObra(codigo){if(!codigo||codigo===dadosXML.obra.codigo)return;if(!obraVisivel(codigo)){mostrarToast('⚠️ Sem permissão para ver esta obra','error');return;}if(KANBAN_FILTRO&&KANBAN_FILTRO!=='todas')KANBAN_FILTRO=''; /* v4.3: filtro de obra específica acompanha a obra selecionada; 'Todas' é escolha explícita e fica */if(obrasRegistry[codigo]){aplicarMaster(obrasRegistry[codigo]);return;}if(SYNC_URL){syncStatus('wait');fetchCloudJSON(SYNC_URL+'?obra='+encodeURIComponent(codigo)).then(function(j){if(j&&j.master)aplicarMaster(j.master);else mostrarToast('⚠️ Obra sem dados-mestre na nuvem','error');}).catch(function(err){mostrarToast(mensagemErroNuvem(err),'error');});}else{mostrarToast('⚠️ Sem nuvem: importe o XML da obra','error');}}
 function carregarListaObras(cb){if(!SYNC_URL){if(cb)cb(null,new Error('SEM_NUVEM'));return;}fetchCloudJSON(SYNC_URL+'?list=1').then(function(j){listaServidor=((j&&j.obras)||[]).filter(function(o){if(o.excluida){obrasExcluidas[o.codigo]=obrasExcluidas[o.codigo]||{por:'',em:''};return false;}return true;});salvarExcluidas();preencherSwitch();if(cb)cb(listaServidor);}).catch(function(err){listaServidor=[];if(cb)cb(null,err);});}
 var syncState={lastRemote:0,timer:null,pending:false,dirty:false};
 function syncStatus(mode){var dot=document.getElementById('statusDot'),txt=document.getElementById('statusText');if(!dot)return;if(mode==='off'){dot.style.background='#7a96b2';txt.textContent='Dados salvos localmente (sem nuvem)';}else if(mode==='wait'){dot.style.background='#f39c12';txt.textContent='Sincronizando com a nuvem...';}else if(mode==='ok'){dot.style.background='#27ae60';txt.textContent='Dados sincronizados na nuvem (compartilhado)';}else{dot.style.background='#c0392b';txt.textContent='Sem internet — salvando local, sincroniza ao reconectar';}}
@@ -919,13 +919,13 @@ function carregarXLSX(cb){if(window.XLSX){cb();return;}var s=document.createElem
 function lerArquivoLote(file){var ext=(file.name.split('.').pop()||'').toLowerCase();if(ext==='xlsx'||ext==='xls'){var r=new FileReader();r.onload=function(e){carregarXLSX(function(){try{var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];var rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});abrirPreviewLote(processarLote(rows));}catch(err){mostrarToast('❌ Erro ao ler planilha: '+err.message,'error');}});};r.readAsArrayBuffer(file);}else{var r2=new FileReader();r2.onload=function(e){try{abrirPreviewLote(processarLote(parseCSV(decodificarTexto(new Uint8Array(e.target.result)))));}catch(err){mostrarToast('❌ Erro ao ler CSV: '+err.message,'error');}};r2.readAsArrayBuffer(file);}}
 function chave(k){return 'fg_'+k+'_'+dadosXML.obra.codigo;}
 function carregarTudo(){var backup=StorageManager.getItem(chave('backup_auto'));var b=null;try{b=backup?JSON.parse(backup):null;}catch(e){}if(b&&b.usuarios&&b.usuarios.length)usuarios=b.usuarios;else{var s=StorageManager.getItem(chave('usuarios'));try{var p=s?JSON.parse(s):null;if(p&&p.length)usuarios=p;}catch(e){}}if(!usuarios.length){usuarios=JSON.parse(JSON.stringify(USUARIOS_PADRAO));}usuarios.forEach(function(u){if(u.ativo===undefined)u.ativo=true;if(u.tipo==='admin')u.perms=null;});var mx=0;usuarios.forEach(function(u){if(u.id>mx)mx=u.id;});currentUserId=mx+1;if(b&&b.tecnicos&&b.tecnicos.length)tecnicos=b.tecnicos;else{var s2=StorageManager.getItem(chave('tecnicos'));try{var p2=s2?JSON.parse(s2):null;if(p2&&p2.length)tecnicos=p2;}catch(e){}}if(!tecnicos.length)tecnicos=TECNICOS_PADRAO.slice();if(b&&b.liberacoes)liberacoes=b.liberacoes;else{var s3=StorageManager.getItem(chave('liberacoes'));try{var p3=s3?JSON.parse(s3):null;if(p3)liberacoes=p3;}catch(e){}}var mx2=0;liberacoes.forEach(function(r){if(r.id>mx2)mx2=r.id;});nextId=mx2+1;if(b&&b.opsAvulsas)opsAvulsas=b.opsAvulsas;else{var s4=StorageManager.getItem(chave('ops'));try{var p4=s4?JSON.parse(s4):null;if(p4)opsAvulsas=p4;}catch(e){}}var mx3=0;opsAvulsas.forEach(function(o){if(o.id>mx3)mx3=o.id;});nextOpId=mx3+1;var audS=StorageManager.getItem(chave('auditoria'));try{var pa=audS?JSON.parse(audS):null;if(pa&&pa.length)auditoria=pa;}catch(e){}carregarExtras(b);carregarV4();persistirLocal(false);}
-function persistirLocal(withSavedAt){StorageManager.setItem(chave('tecnicos'),JSON.stringify(tecnicos));StorageManager.setItem(chave('liberacoes'),JSON.stringify(liberacoes));StorageManager.setItem(chave('ops'),JSON.stringify(opsAvulsas));StorageManager.setItem(chave('auditoria'),JSON.stringify(auditoria));StorageManager.setItem(chave('tecinfo'),JSON.stringify(tecInfo));StorageManager.setItem(chave('metas'),JSON.stringify(metas));StorageManager.setItem('fg_usuarios_demo',JSON.stringify(usuarios));if(withSavedAt!==false)StorageManager.setItem(chave('savedAt'),String(Date.now()));salvarV4();}
+function persistirLocal(withSavedAt){var ok=true;ok=StorageManager.setItem(chave('tecnicos'),JSON.stringify(tecnicos))&&ok;ok=StorageManager.setItem(chave('liberacoes'),JSON.stringify(liberacoes))&&ok;ok=StorageManager.setItem(chave('ops'),JSON.stringify(opsAvulsas))&&ok;ok=StorageManager.setItem(chave('auditoria'),JSON.stringify(auditoria))&&ok;ok=StorageManager.setItem(chave('tecinfo'),JSON.stringify(tecInfo))&&ok;ok=StorageManager.setItem(chave('metas'),JSON.stringify(metas))&&ok;ok=StorageManager.setItem('fg_usuarios_demo',JSON.stringify(usuarios))&&ok;if(withSavedAt!==false)ok=StorageManager.setItem(chave('savedAt'),String(Date.now()))&&ok;if(!ok)mostrarToast('⚠️ Armazenamento cheio — os dados podem não ter sido salvos','error');salvarV4();} /* v4.4 (R-27): retorno de setItem checado */
 function salvarTudo(){persistirLocal();syncState.dirty=true;agendarPush();}
 function contarAdminsAtivos(){return usuarios.filter(function(u){return u.tipo==='admin'&&u.ativo!==false;}).length;}
 function fazerBackupAutomatico(){try{localStorage.setItem(chave('backup_auto'),JSON.stringify({tecnicos:tecnicos,tecInfo:tecInfo,metas:metas,liberacoes:liberacoes,opsAvulsas:opsAvulsas,nextId:nextId,nextOpId:nextOpId,currentUserId:currentUserId,dataBackup:new Date().toISOString()}));var i=document.getElementById('backupIndicator');if(i){i.classList.add('visible');setTimeout(function(){i.classList.remove('visible');},2000);}return true;}catch(e){return false;}}
 window.addEventListener('beforeunload',fazerBackupAutomatico);setInterval(function(){if(usuarioLogado)fazerBackupAutomatico();},300000);
-function exportarDados(){var d={usuarios:usuarios,tecnicos:tecnicos,tecInfo:tecInfo,metas:metas,liberacoes:liberacoes,opsAvulsas:opsAvulsas,nextId:nextId,nextOpId:nextOpId,currentUserId:currentUserId,obraCodigo:dadosXML.obra.codigo,dataExport:new Date().toISOString()};var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='FABRISYNC_Backup_'+dadosXML.obra.codigo+'_'+hojeLocal()+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);regAuditoria('BACKUP_EXPORTADO','');salvarTudo();mostrarToast('✅ Backup exportado com sucesso!');}
-function importarDados(ev){var f=ev.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);if(!d.liberacoes||!d.tecnicos||!d.usuarios)throw new Error('Arquivo inválido');if(d.obraCodigo!==dadosXML.obra.codigo&&!confirm('⚠️ Este backup é de outra obra ('+d.obraCodigo+'). Importar mesmo assim?'))return;usuarios=mergeUsersByName(usuarios,d.usuarios);tecnicos=d.tecnicos;tecInfo=d.tecInfo||tecInfo;metas=d.metas||metas;liberacoes=d.liberacoes;opsAvulsas=d.opsAvulsas||[];normalizarDados();nextId=d.nextId||liberacoes.length+1;nextOpId=d.nextOpId||opsAvulsas.length+1;currentUserId=d.currentUserId||usuarios.length+1;regAuditoria('BACKUP_IMPORTADO',fmtInt(liberacoes.length)+' registros');salvarTudo();renderizarTudo();preencherLoginUsuarios();mostrarToast('✅ Dados importados com sucesso! '+fmtInt(liberacoes.length)+' registros.');}catch(err){mostrarToast('❌ Erro ao importar: '+err.message,'error');}};r.readAsText(f);ev.target.value='';}
+function exportarDados(){var d={formato:'fabrisync-demo-backup',versao:'v4.4',usuarios:usuarios,tecnicos:tecnicos,tecInfo:tecInfo,metas:metas,liberacoes:liberacoes,opsAvulsas:opsAvulsas,nextId:nextId,nextOpId:nextOpId,currentUserId:currentUserId,obraCodigo:dadosXML.obra.codigo,dataExport:new Date().toISOString(),cronograma:cronograma,marcos:marcos,entregas:entregas,inconformidades:inconformidades,agenda:agenda,anexos:anexos,notificacoes:notificacoes}; /* v4.4 (R-05): export inclui o estado v4 completo */var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='FABRISYNC_Backup_'+dadosXML.obra.codigo+'_'+hojeLocal()+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);regAuditoria('BACKUP_EXPORTADO','');salvarTudo();mostrarToast('✅ Backup exportado com sucesso!');}
+function importarDados(ev){if(!isAdmin()){try{ev.target.value='';}catch(e){}mostrarToast('⚠️ Somente o Administrador restaura backups','error');return;}var f=ev.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);if(!d.liberacoes||!d.tecnicos||!d.usuarios)throw new Error('Arquivo inválido');if(d.obraCodigo!==dadosXML.obra.codigo&&!confirm('⚠️ Este backup é de outra obra ('+d.obraCodigo+'). Importar mesmo assim?'))return;usuarios=mergeUsersByName(usuarios,d.usuarios);tecnicos=d.tecnicos;tecInfo=d.tecInfo||tecInfo;metas=d.metas||metas;liberacoes=d.liberacoes;opsAvulsas=d.opsAvulsas||[];if(d.cronograma)cronograma=d.cronograma;if(Array.isArray(d.marcos))marcos=d.marcos;if(Array.isArray(d.entregas))entregas=d.entregas;if(Array.isArray(d.inconformidades))inconformidades=d.inconformidades;if(Array.isArray(d.agenda))agenda=d.agenda;if(Array.isArray(d.anexos))anexos=d.anexos;if(Array.isArray(d.notificacoes))notificacoes=d.notificacoes;normalizarDados();nextId=d.nextId||liberacoes.length+1;nextOpId=d.nextOpId||opsAvulsas.length+1;currentUserId=d.currentUserId||usuarios.length+1;regAuditoria('BACKUP_IMPORTADO',fmtInt(liberacoes.length)+' registros');salvarTudo();renderizarTudo();preencherLoginUsuarios();mostrarToast('✅ Dados importados com sucesso! '+fmtInt(liberacoes.length)+' registros.');}catch(err){mostrarToast('❌ Erro ao importar: '+err.message,'error');}};r.readAsText(f);ev.target.value='';}
 /*renderizarTecnicos movido*/
 function permsTexto(u){if(u.tipo==='admin')return 'Todas (master)';if(u.tipo==='visitante')return 'Somente leitura';var ps=[];PERMS_LIST.forEach(function(p){if(u.perms&&u.perms[p[0]])ps.push(p[1]);});return ps.length?ps.join(', '):'Nenhuma';}
 /*preencherSelectTecnicos movido*/
@@ -1047,13 +1047,13 @@ function salvarNovaSenha(){if(!usuarioLogado||usuarioLogado.tipo==='visitante'||
 if(!a){mostrarToast('⚠️ Informe a senha atual','error');return;}if(!senhaForte(n)){mostrarToast('⚠️ Nova senha: mínimo 8 caracteres, com letras e números','error');return;}if(n!==c){mostrarToast('⚠️ A confirmação não confere com a nova senha','error');return;}if(n===a){mostrarToast('⚠️ A nova senha deve ser diferente da atual','error');return;}
 Promise.all([phDe(a),phDe(n)]).then(function(h){return postServidor({action:'trocarSenha',ph:h[0],phNovo:h[1]});}).then(function(r){if(r&&r.ok){authToken=r.tk;authMustChange=false;salvarVerificadorOffline(usuarioLogado.usuario,n,{id:usuarioLogado.id,usuario:usuarioLogado.usuario,tipo:usuarioLogado.tipo,perms:usuarioLogado.perms||null});regAuditoria('SENHA_ALTERADA',usuarioLogado.usuario);salvarTudo();document.getElementById('modalSenha').classList.remove('ativo');mostrarToast('✅ Senha alterada com sucesso');}else if(r&&r.error==='CRED')mostrarToast('⚠️ Senha atual incorreta','error');else mostrarToast('❌ Não foi possível alterar a senha','error');}).catch(function(err){mostrarToast(mensagemErroNuvem(err),'error');});}
 /* ---- usuários (servidor) ---- */
-function renderizarUsuarios(){var tb=document.getElementById('usuariosTableBody');if(!tb)return;tb.innerHTML='';usuarios.forEach(function(u,i){var ad=u.tipo==='admin';var tr=document.createElement('tr');tr.innerHTML='<td><i class="fas '+(ad?'fa-user-shield':'fa-user')+'"></i> '+escH(u.usuario)+(u.mustChange?' <small style="color:#c77b00;">(senha provisória)</small>':'')+'</td><td>'+(ad?'Admin':(u.tipo==='visitante'?'Visitante':'Operador'))+'</td><td style="font-size:.7rem;">'+escH(permsTexto(u))+'</td><td>'+(u.ativo!==false?'<span class="status-op concluida">Ativo</span>':'<span class="badge-off">Inativo</span>')+'</td><td style="text-align:right;"><button class="btn btn-info btn-sm ed-usu" data-i="'+i+'" title="Editar"><i class="fas fa-pen"></i></button> <button class="btn btn-warning btn-sm tg-usu" data-i="'+i+'" title="Ativar/Inativar"><i class="fas fa-power-off"></i></button> '+(u.id>4?'<button class="btn btn-danger btn-sm rm-usu" data-i="'+i+'" title="Remover"><i class="fas fa-trash"></i></button>':'')+'</td>';tb.appendChild(tr);});
+function renderizarUsuarios(){var tb=document.getElementById('usuariosTableBody');if(!tb)return;tb.innerHTML='';usuarios.forEach(function(u,i){var ad=u.tipo==='admin';var tr=document.createElement('tr');tr.innerHTML='<td><i class="fas '+(ad?'fa-user-shield':'fa-user')+'"></i> '+escH(u.usuario)+(u.mustChange?' <small style="color:#c77b00;">(senha provisória)</small>':'')+'</td><td>'+(ad?'Admin':(u.tipo==='visitante'?'Visitante':'Operador'))+'</td><td style="font-size:.7rem;">'+escH(permsTexto(u))+'</td><td>'+(u.ativo!==false?'<span class="status-op concluida">Ativo</span>':'<span class="badge-off">Inativo</span>')+'</td><td style="text-align:right;">'+(isAdmin()?'<button class="btn btn-info btn-sm ed-usu" data-i="'+i+'" title="Editar"><i class="fas fa-pen"></i></button> <button class="btn btn-warning btn-sm tg-usu" data-i="'+i+'" title="Ativar/Inativar"><i class="fas fa-power-off"></i></button> '+(u.id>4?'<button class="btn btn-danger btn-sm rm-usu" data-i="'+i+'" title="Remover"><i class="fas fa-trash"></i></button>':''):'')+'</td>';tb.appendChild(tr);});
 function pos(r,okMsg){if(r&&r.ok){usuarios=r.usuarios;renderizarUsuarios();mostrarToast(okMsg);}else mostrarToast('⚠️ '+((r&&r.msg)||(r&&r.error)||'Falha'),'error');}
 function falha(err){mostrarToast(mensagemErroNuvem(err),'error');}
 tb.querySelectorAll('.ed-usu').forEach(function(b){b.addEventListener('click',function(){abrirModalUsuario(+this.dataset.i);});});
-tb.querySelectorAll('.tg-usu').forEach(function(b){b.addEventListener('click',function(){var u=usuarios[+this.dataset.i];var novo=u.ativo===false;if(!novo&&u.tipo==='admin'&&contarAdminsAtivos()<=1){mostrarToast('⚠️ Não é possível inativar o último admin ativo','error');return;}postServidor({action:'userSave',u:{id:u.id,usuario:u.usuario,tipo:u.tipo,perms:u.perms,ativo:novo}}).then(function(r){if(r&&r.ok){regAuditoria(novo?'USUARIO_REATIVADO':'USUARIO_INATIVADO',u.usuario);salvarTudo();pos(r,'✅ Status atualizado');}else aplicarToggleLocal(u,novo);}).catch(function(){aplicarToggleLocal(u,novo);});});});
-tb.querySelectorAll('.rm-usu').forEach(function(b){b.addEventListener('click',function(){var u=usuarios[+this.dataset.i];if(u.usuario===usuarioLogado.usuario){mostrarToast('⚠️ Você não pode remover a si mesmo','error');return;}if(u.tipo==='admin'&&u.ativo!==false&&contarAdminsAtivos()<=1){mostrarToast('⚠️ Não é possível remover o último admin ativo','error');return;}if(confirm('Remover usuário "'+u.usuario+'"?')){postServidor({action:'userDelete',id:u.id}).then(function(r){if(r&&r.ok){regAuditoria('USUARIO_REMOVIDO',u.usuario);salvarTudo();pos(r,'✅ Usuário removido');}else aplicarDeleteLocal(u);}).catch(function(){aplicarDeleteLocal(u);});}});});renderizarPermsEMarca();}
-function salvarUsuario(){var u=document.getElementById('modalUserUser').value.trim(),s=document.getElementById('modalUserPass').value.trim(),t=document.getElementById('modalUserTipo').value;var ativo=document.getElementById('modalUserAtivo').checked;var perms={};document.querySelectorAll('#permsBox input').forEach(function(cb){perms[cb.dataset.perm]=cb.checked;});
+tb.querySelectorAll('.tg-usu').forEach(function(b){b.addEventListener('click',function(){if(!isAdmin()){mostrarToast('⚠️ Somente o Administrador gerencia usuários','error');return;}var u=usuarios[+this.dataset.i];var novo=u.ativo===false;if(!novo&&u.tipo==='admin'&&contarAdminsAtivos()<=1){mostrarToast('⚠️ Não é possível inativar o último admin ativo','error');return;}postServidor({action:'userSave',u:{id:u.id,usuario:u.usuario,tipo:u.tipo,perms:u.perms,ativo:novo}}).then(function(r){if(r&&r.ok){regAuditoria(novo?'USUARIO_REATIVADO':'USUARIO_INATIVADO',u.usuario);salvarTudo();pos(r,'✅ Status atualizado');}else aplicarToggleLocal(u,novo);}).catch(function(){aplicarToggleLocal(u,novo);});});});
+tb.querySelectorAll('.rm-usu').forEach(function(b){b.addEventListener('click',function(){if(!isAdmin()){mostrarToast('⚠️ Somente o Administrador gerencia usuários','error');return;}var u=usuarios[+this.dataset.i];if(u.usuario===usuarioLogado.usuario){mostrarToast('⚠️ Você não pode remover a si mesmo','error');return;}if(u.tipo==='admin'&&u.ativo!==false&&contarAdminsAtivos()<=1){mostrarToast('⚠️ Não é possível remover o último admin ativo','error');return;}if(confirm('Remover usuário "'+u.usuario+'"?')){postServidor({action:'userDelete',id:u.id}).then(function(r){if(r&&r.ok){regAuditoria('USUARIO_REMOVIDO',u.usuario);salvarTudo();pos(r,'✅ Usuário removido');}else aplicarDeleteLocal(u);}).catch(function(){aplicarDeleteLocal(u);});}});});renderizarPermsEMarca();}
+function salvarUsuario(){if(!isAdmin()){mostrarToast('⚠️ Somente o Administrador gerencia usuários','error');return;}var u=document.getElementById('modalUserUser').value.trim(),s=document.getElementById('modalUserPass').value.trim(),t=document.getElementById('modalUserTipo').value;var ativo=document.getElementById('modalUserAtivo').checked;var perms={};document.querySelectorAll('#permsBox input').forEach(function(cb){perms[cb.dataset.perm]=cb.checked;});
 if(!u){mostrarToast('⚠️ Informe o nome do usuário','error');return;}var old=editandoUsuarioIndex>=0?usuarios[editandoUsuarioIndex]:null;
 if(!old&&!s){mostrarToast('⚠️ Preencha a senha provisória','error');return;}if(s&&!senhaForte(s)){mostrarToast('⚠️ Senha: mínimo 8 caracteres, com letras e números','error');return;}
 if(old&&old.tipo==='admin'&&old.ativo!==false&&(t!=='admin'||ativo===false)&&contarAdminsAtivos()<=1){mostrarToast('⚠️ Não é possível rebaixar/inativar o último admin ativo','error');return;}
@@ -1088,7 +1088,7 @@ regAuditoria(stage==='liberada'?'LIBERACAO':('LANC_'+stage.toUpperCase()),tipo+'
 emitirNotificacao('lancamento',{tipo:tipo,qtde:qtde,stage:stage,opNum:opNum,tecnico:tecnico,obra:dadosXML.obra.codigo});salvarTudo();fecharModal();renderizarTudo();mostrarToast('✅ '+ETAPA_NOME[stage]+': '+fmtInt(qtde)+' un. de '+tipo+(extra?' (EXTRA)':''));}
 function cancelarLancamento(id){var r=liberacoes.find(function(x){return x.id===id;});if(!r)return;if(!hasPerm('cancelar')){mostrarToast('⚠️ Sem permissão para cancelar','error');return;}var ck=podeCancelar(r);if(!ck.ok){bloquear(ck.code,ck.msg);return;}
 pedirMotivo('Cancelar '+ETAPA_NOME[stageDe(r)].toLowerCase()+' de '+r.tipo,fmtInt(r.qtde)+' un · '+fmtTs(r.data)+' · '+(r.tecnico||'—')+' — o registro permanece no histórico e a quantidade volta para o saldo/etapa.',function(m){r.cancelada=true;addHist(r,'CANCELADA',m);regAuditoria('LIB_CANCELADA',r.tipo+' · '+ETAPA_NOME[stageDe(r)]+' · '+fmtInt(r.qtde)+' un · '+fmtTs(r.data)+' · Motivo: '+m);emitirNotificacao('lancamento_cancelado',{tipo:r.tipo,qtde:r.qtde,motivo:m,obra:dadosXML.obra.codigo});salvarTudo();renderizarTudo();mostrarToast('🚫 Lançamento cancelado — histórico preservado');});}
-function restaurarLancamento(id){var r=liberacoes.find(function(x){return x.id===id;});if(!r)return;if(!hasPerm('cancelar')){mostrarToast('⚠️ Sem permissão','error');return;}var ck=podeRestaurar(r);if(!ck.ok){bloquear(ck.code,ck.msg);return;}
+function restaurarLancamento(id){var r=liberacoes.find(function(x){return x.id===id;});if(!r)return;if(!r.cancelada){mostrarToast('⚠️ Lançamento não está cancelado','error');return;}if(!hasPerm('cancelar')){mostrarToast('⚠️ Sem permissão','error');return;}var ck=podeRestaurar(r);if(!ck.ok){bloquear(ck.code,ck.msg);return;}
 if(ck.precisaExtra){if(!isAdmin()){bloquear('EXIGE_MASTER','Restaurar esta liberação ultrapassa o contratado de '+r.tipo+'. Somente ADMIN master.');return;}if(!confirm('Restaurar vai ultrapassar o contratado de '+r.tipo+' e ficará como PRODUÇÃO EXTRA. Confirmar?'))return;r.extra=true;}
 else if(!confirm('Restaurar o lançamento de '+fmtInt(r.qtde)+' un. de '+r.tipo+' ('+ETAPA_NOME[stageDe(r)]+', '+fmtTs(r.data)+')?'))return;
 r.cancelada=false;addHist(r,'RESTAURADA','');regAuditoria('LIB_RESTAURADA',r.tipo+' · '+ETAPA_NOME[stageDe(r)]+' · '+fmtInt(r.qtde)+' un · '+fmtTs(r.data));emitirNotificacao('lancamento_restaurado',{tipo:r.tipo,qtde:r.qtde,obra:dadosXML.obra.codigo});salvarTudo();renderizarTudo();mostrarToast('✅ Lançamento restaurado');}
@@ -1107,7 +1107,7 @@ html+='<div class="flip-card status-'+st+'" data-tipo="'+escH(tipo)+'"><div clas
 +chipsEtapas(tipo)+'<div class="card-progress"><div class="progress-bar"><div class="fill" style="width:'+p+'%;background:'+cor+';"></div></div><div class="progress-label"><span>'+pct2(p)+' liberado</span><span>'+fmtInt(lib)+'/'+fmtInt(q)+'</span></div></div><div style="margin-top:6px;"><span class="badge-liberado"><i class="fas fa-tasks"></i> '+fmtInt(regs.length)+' registros</span></div></div>'
 +'<div class="flip-card-back"><div class="back-header"><h4>📋 '+escH(tipo)+'</h4><span>L '+fmtInt(lib)+' · F '+fmtInt(getEtapa(tipo,'fabricada'))+' · E '+fmtInt(getEtapa(tipo,'expedida'))+' · I '+fmtInt(getEtapa(tipo,'instalada'))+' / '+fmtInt(q)+'</span></div><div class="registros-list">'+(regs.length?'':'<div class="sem-registro">Nenhum lançamento registrado</div>')
 +regs.map(function(r){var btn='';if(hasPerm('cancelar')){btn=r.cancelada?'<button class="btn-reg restaurar" data-id="'+r.id+'" title="Restaurar lançamento"><i class="fas fa-undo"></i></button>':'<button class="btn-reg cancelar" data-id="'+r.id+'" title="Cancelar lançamento (motivo obrigatório, preserva histórico)"><i class="fas fa-ban"></i></button>';}var s=stageDe(r);var lastC=(r.hist||[]).filter(function(h){return h.ev==='CANCELADA';}).slice(-1)[0];return '<div class="registro-item'+(r.extra?' extra':'')+(r.cancelada?' cancelado':'')+'"'+(lastC?' title="Cancelada por '+escH(lastC.por)+' em '+escH(fmtTs(lastC.em))+' — '+escH(lastC.motivo)+'"':'')+'><span class="data">'+escH(fmtTs(r.data))+'</span><span class="stg" style="background:'+ETAPA_COR[s]+';">'+ETAPA_NOME[s]+'</span>'+(r.opNum?'<span class="opn">'+escH(r.opNum)+'</span>':'')+'<span class="tecnico"><i class="fas fa-user"></i> '+escH(r.tecnico||'—')+'</span><span class="etapa">'+escH(r.etapa||'')+(r.extra?' <span class="badge-extra">EXTRA</span>':'')+(r.cancelada?' <span class="badge-cancelado">CANCELADA</span>':'')+'</span><span class="qtd">+'+fmtInt(r.qtde)+'</span>'+btn+cancInfoHtml(r)+'</div>';}).join('')
-+'</div><button class="btn-liberar" data-tipo="'+escH(tipo)+'"><i class="fas fa-plus-circle"></i> Lançar</button><div class="back-footer"><i class="fas fa-undo-alt"></i> clique para virar</div></div></div></div>';});
++'</div>'+(hasPerm('liberar')?'<button class="btn-liberar" data-tipo="'+escH(tipo)+'"><i class="fas fa-plus-circle"></i> Lançar</button>':'')+'<div class="back-footer"><i class="fas fa-undo-alt"></i> clique para virar</div></div></div></div>';});
 c.innerHTML=html;
 c.querySelectorAll('.flip-card').forEach(function(card){card.addEventListener('click',function(e){if(e.target.closest('.btn-liberar')||e.target.closest('.btn-reg'))return;this.classList.toggle('flipped');});});
 c.querySelectorAll('.btn-liberar').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();abrirModal(this.dataset.tipo);});});
@@ -1126,18 +1126,18 @@ var n=opsAvulsas.filter(function(o){return opTipoDe(o)===tp;}).length+1;var num=
 opsAvulsas.push({id:nextOpId++,nomen:tp+' - ['+ck.tipo+']',num:num,opTipo:tp,categoria:cat,motivo:r.m,code:r.c,tipo:ck.tipo,qtde:qtde,data:document.getElementById('opData').value||hojeLocal(),tecnico:document.getElementById('opTecnico').value,obs:document.getElementById('opObs').value.trim(),status:'Aberta',cancelada:false,complementar:tp==='OPC',criadoEm:agoraLocal(),criadoPor:usuarioLogado?usuarioLogado.usuario:'—'});
 regAuditoria(tp==='OPR'?'LIBERACAO_OPR':'LIBERACAO_OPC',num+' · '+ck.tipo+' x '+fmtInt(qtde)+' un · '+cat+' · '+r.m);salvarTudo();renderizarTudo();fecharModalOP();mostrarToast('✅ '+tp+' registrada: '+num+' · '+ck.tipo);}
 function renderizarOps(){var tb=document.getElementById('opsTableBody');if(!tb)return;tb.innerHTML='';if(!opsAvulsas.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:#8a9bb0;font-style:italic;padding:20px;">Nenhuma OPR/OPC registrada</td></tr>';}
-opsAvulsas.forEach(function(o,i){var tp=opTipoDe(o);var stShow=o.cancelada?'Cancelada':o.status;var tr=document.createElement('tr');if(o.cancelada)tr.className='op-cancelada';var acoes='<button class="btn btn-info btn-sm st-op" data-i="'+i+'" title="Alternar Aberta/Concluída"><i class="fas fa-exchange-alt"></i></button> ';if(hasPerm('cancelar')){acoes+=o.cancelada?'<button class="btn btn-success btn-sm rs-op" data-i="'+i+'" title="Restaurar"><i class="fas fa-undo"></i></button>':'<button class="btn btn-danger btn-sm cn-op" data-i="'+i+'" title="Cancelar (motivo obrigatório, preserva histórico)"><i class="fas fa-ban"></i></button>';}
+opsAvulsas.forEach(function(o,i){var tp=opTipoDe(o);var stShow=o.cancelada?'Cancelada':o.status;var tr=document.createElement('tr');if(o.cancelada)tr.className='op-cancelada';var acoes=hasPerm('ops')?'<button class="btn btn-info btn-sm st-op" data-i="'+i+'" title="Alternar Aberta/Concluída"><i class="fas fa-exchange-alt"></i></button> ':'';if(hasPerm('cancelar')){acoes+=o.cancelada?'<button class="btn btn-success btn-sm rs-op" data-i="'+i+'" title="Restaurar"><i class="fas fa-undo"></i></button>':'<button class="btn btn-danger btn-sm cn-op" data-i="'+i+'" title="Cancelar (motivo obrigatório, preserva histórico)"><i class="fas fa-ban"></i></button>';}
 var lastC=(o.hist||[]).filter(function(h){return h.ev==='CANCELADA';}).slice(-1)[0];
 tr.innerHTML='<td><span class="tp-badge '+tp.toLowerCase()+'">'+tp+'</span> <strong>'+escH(o.nomen)+'</strong>'+(o.num?' <small style="color:#7a96b2;">'+escH(o.num)+'</small>':'')+cancInfoHtml(o)+'</td><td>'+escH(o.categoria)+'</td><td>'+escH(o.motivo)+'</td><td><code>'+escH(o.code)+'</code></td><td style="text-align:right;">'+fmtInt(o.qtde)+'</td><td>'+escH(o.data?fmtTs(o.data):'—')+'</td><td>'+escH(o.tecnico||'—')+'</td><td><span class="status-op '+stShow.toLowerCase()+'">'+stShow+'</span></td><td style="text-align:right;">'+acoes+'</td>';tb.appendChild(tr);});
 tb.querySelectorAll('.st-op').forEach(function(b){b.addEventListener('click',function(){var o=opsAvulsas[+this.dataset.i];if(!hasPerm('ops')){mostrarToast('⚠️ Sem permissão','error');return;}if(o.cancelada){mostrarToast('⚠️ Restaure a OP antes de alterar o status','error');return;}o.status=o.status==='Aberta'?'Concluída':'Aberta';regAuditoria('OP_STATUS',o.nomen+' → '+o.status);salvarTudo();renderizarOps();mostrarToast('✅ Status: '+o.status);});});
-tb.querySelectorAll('.cn-op').forEach(function(b){b.addEventListener('click',function(){var o=opsAvulsas[+this.dataset.i];pedirMotivo('Cancelar '+opTipoDe(o)+' '+o.nomen,fmtInt(o.qtde)+' un · o registro permanece no histórico.',function(m){o.cancelada=true;addHist(o,'CANCELADA',m);regAuditoria('OP_CANCELADA',(o.num||o.nomen)+' · '+o.nomen+' · Motivo: '+m);salvarTudo();renderizarTudo();mostrarToast('🚫 OP cancelada — histórico preservado');});});});
-tb.querySelectorAll('.rs-op').forEach(function(b){b.addEventListener('click',function(){var o=opsAvulsas[+this.dataset.i];var tp=opTipoDe(o);if(o.tipo&&acharTipoExato(o.tipo)){var ck=checarOpEspecial(o.tipo,tp,o.qtde,o.id);if(!ck.ok){bloquear(ck.code,ck.msg);return;}}if(confirm('Restaurar a OP "'+o.nomen+'"?')){o.cancelada=false;addHist(o,'RESTAURADA','');regAuditoria('OP_RESTAURADA',(o.num||o.nomen)+' · '+o.nomen);salvarTudo();renderizarTudo();mostrarToast('✅ OP restaurada');}});});}
+tb.querySelectorAll('.cn-op').forEach(function(b){b.addEventListener('click',function(){if(!hasPerm('cancelar')){mostrarToast('⚠️ Sem permissão','error');return;}var o=opsAvulsas[+this.dataset.i];pedirMotivo('Cancelar '+opTipoDe(o)+' '+o.nomen,fmtInt(o.qtde)+' un · o registro permanece no histórico.',function(m){o.cancelada=true;addHist(o,'CANCELADA',m);regAuditoria('OP_CANCELADA',(o.num||o.nomen)+' · '+o.nomen+' · Motivo: '+m);salvarTudo();renderizarTudo();mostrarToast('🚫 OP cancelada — histórico preservado');});});});
+tb.querySelectorAll('.rs-op').forEach(function(b){b.addEventListener('click',function(){if(!hasPerm('cancelar')){mostrarToast('⚠️ Sem permissão','error');return;}var o=opsAvulsas[+this.dataset.i];var tp=opTipoDe(o);if(o.tipo&&acharTipoExato(o.tipo)){var ck=checarOpEspecial(o.tipo,tp,o.qtde,o.id);if(!ck.ok){bloquear(ck.code,ck.msg);return;}}if(confirm('Restaurar a OP "'+o.nomen+'"?')){o.cancelada=false;addHist(o,'RESTAURADA','');regAuditoria('OP_RESTAURADA',(o.num||o.nomen)+' · '+o.nomen);salvarTudo();renderizarTudo();mostrarToast('✅ OP restaurada');}});});}
 /* ===== Técnicos e colaboradores ===== */
 function preencherSelectTecnicos(){var sorted=sortAlpha(tecnicosAtivos());['modalTecnico','opTecnico'].forEach(function(id){var s=document.getElementById(id);if(!s)return;var cur=s.value;s.innerHTML='';sorted.forEach(function(n){var o=document.createElement('option');o.value=n;o.textContent=n;s.appendChild(o);});if(cur&&sorted.indexOf(cur)>-1)s.value=cur;});var dl=document.getElementById('tiposList');if(dl){dl.innerHTML='';sortAlpha(getTipos()).forEach(function(t){var o=document.createElement('option');o.value=t;dl.appendChild(o);});}}
 function renderizarTecnicos(){var tb=document.getElementById('tecnicosTableBody');if(!tb)return;tb.innerHTML='';var pode=hasPerm('tecnicos');tecnicos.forEach(function(n,i){var inf=garantirTecInfo(n);var tr=document.createElement('tr');if(inf.ativo===false)tr.className='op-cancelada';tr.innerHTML='<td><code>'+escH(inf.codigo)+'</code></td><td><strong>'+escH(n)+'</strong></td><td>'+escH(inf.categoria||'Técnico')+'</td><td>'+escH(inf.funcao||'—')+'</td><td>'+escH(inf.telefone||'—')+'</td><td>'+(inf.ativo===false?'<span class="badge-off">Inativo</span>':'<span class="status-op concluida">Ativo</span>')+'</td><td style="text-align:center;">'+fmtInt(qtdLancTec(n))+'</td><td style="text-align:right;white-space:nowrap;">'+(pode?'<button class="btn btn-info btn-sm ed-tec" data-i="'+i+'" title="Editar"><i class="fas fa-pen"></i></button> <button class="btn btn-warning btn-sm tg-tec" data-i="'+i+'" title="Ativar/Inativar"><i class="fas fa-power-off"></i></button> <button class="btn btn-danger btn-sm rm-tec" data-i="'+i+'" title="Remover"><i class="fas fa-trash"></i></button>':'')+'</td>';tb.appendChild(tr);});
 tb.querySelectorAll('.ed-tec').forEach(function(b){b.addEventListener('click',function(){abrirModalTec(+this.dataset.i);});});
-tb.querySelectorAll('.tg-tec').forEach(function(b){b.addEventListener('click',function(){var n=tecnicos[+this.dataset.i];var inf=garantirTecInfo(n);inf.ativo=(inf.ativo===false);regAuditoria(inf.ativo?'TECNICO_REATIVADO':'TECNICO_INATIVADO',n);salvarTudo();renderizarTecnicos();preencherSelectTecnicos();mostrarToast('✅ Status atualizado');});});
-tb.querySelectorAll('.rm-tec').forEach(function(b){b.addEventListener('click',function(){var i=+this.dataset.i,n=tecnicos[i];if(qtdLancTec(n)>0){mostrarToast('⚠️ '+n+' possui '+fmtInt(qtdLancTec(n))+' lançamento(s). Inative em vez de remover para preservar o histórico.','error');return;}if(confirm('Remover "'+n+'"?')){regAuditoria('TECNICO_REMOVIDO',n);tecnicos.splice(i,1);delete tecInfo[n];salvarTudo();renderizarTecnicos();preencherSelectTecnicos();mostrarToast('✅ Cadastro removido');}});});}
+tb.querySelectorAll('.tg-tec').forEach(function(b){b.addEventListener('click',function(){if(!hasPerm('tecnicos')){mostrarToast('⚠️ Sem permissão','error');return;}var n=tecnicos[+this.dataset.i];var inf=garantirTecInfo(n);inf.ativo=(inf.ativo===false);regAuditoria(inf.ativo?'TECNICO_REATIVADO':'TECNICO_INATIVADO',n);salvarTudo();renderizarTecnicos();preencherSelectTecnicos();mostrarToast('✅ Status atualizado');});});
+tb.querySelectorAll('.rm-tec').forEach(function(b){b.addEventListener('click',function(){if(!hasPerm('tecnicos')){mostrarToast('⚠️ Sem permissão','error');return;}var i=+this.dataset.i,n=tecnicos[i];if(qtdLancTec(n)>0){mostrarToast('⚠️ '+n+' possui '+fmtInt(qtdLancTec(n))+' lançamento(s). Inative em vez de remover para preservar o histórico.','error');return;}if(confirm('Remover "'+n+'"?')){regAuditoria('TECNICO_REMOVIDO',n);tecnicos.splice(i,1);delete tecInfo[n];salvarTudo();renderizarTecnicos();preencherSelectTecnicos();mostrarToast('✅ Cadastro removido');}});});}
 var editandoTec=-1;
 function abrirModalTec(i){if(!hasPerm('tecnicos')){mostrarToast('⚠️ Sem permissão','error');return;}editandoTec=i;var n=document.getElementById('tecNome');if(i>=0){var nome=tecnicos[i],inf=garantirTecInfo(nome);setTxt('tecTitulo','Editar cadastro');n.value=nome;n.disabled=true;document.getElementById('tecCodigo').value=inf.codigo;document.getElementById('tecCategoria').value=inf.categoria||'Técnico';document.getElementById('tecFuncao').value=inf.funcao||'';document.getElementById('tecFone').value=inf.telefone||'';document.getElementById('tecAtivo').checked=inf.ativo!==false;}else{setTxt('tecTitulo','Novo cadastro');n.value='';n.disabled=false;document.getElementById('tecCodigo').value=proxCodigoTec();document.getElementById('tecCategoria').value='Técnico';document.getElementById('tecFuncao').value='';document.getElementById('tecFone').value='';document.getElementById('tecAtivo').checked=true;}document.getElementById('modalTec').classList.add('ativo');}
 function fecharModalTec(){document.getElementById('modalTec').classList.remove('ativo');editandoTec=-1;}
@@ -1503,6 +1503,7 @@ function salvarEditorDatas(){
   salvarTudo();renderizarCronograma();BANNER_FIM_CACHE='';renderizarBannerFim();mostrarToast('✅ Datas do cronograma salvas');
 }
 function limparEditorDatas(){
+  BANNER_FIM_DIGITADO={};
   if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   var niv=document.getElementById('cronEdNivel').value;
   if(!cronograma)cronograma=cronogramaPadrao();
@@ -1515,7 +1516,7 @@ function limparEditorDatas(){
 }
 function marcosHtml(cod){
   var mc=marcosDe(cod);
-  var pode=podeGerirObra();
+  var pode=podeGerirObra()&&!obraCancelada();
   var h='<div class="cron-sec"><h4 class="dash-h">Marcos da obra</h4><div class="marcos-grid">';
   MARCOS_NOMES.forEach(function(nm){
     var rec=null;mc.forEach(function(x){if(x.nome===nm)rec=x;});
@@ -1537,7 +1538,7 @@ function marcosHtml(cod){
   return h;
 }
 function entregaFormHtml(cod){
-  if(!podeGerirObra())return '';
+  if(!podeGerirObra()||obraCancelada())return '';
   var ed=null;
   if(CRON_EDIT_ENTREGA>=0)entregas.forEach(function(e){if(e.id===CRON_EDIT_ENTREGA)ed=e;});
   var tips=(masterDeCod(cod)||{tipologias:[]}).tipologias;
@@ -1557,7 +1558,7 @@ function entregaFormHtml(cod){
 function renderEntItems(){
   var box=document.getElementById('entItemsLista');if(!box)return;
   box.innerHTML=CRON_ENTREGA_ITEMS.map(function(it,i){return '<span class="ent-item">'+escH(it.tipo)+' · '+fmtInt(it.qtde)+' un <button class="ent-item-rm" data-i="'+i+'" title="Remover item">✕</button></span>';}).join(' ')||'<span style="color:#8a9bb0;font-size:.72rem;">Nenhum item — adicione ao menos uma tipologia.</span>';
-  box.querySelectorAll('.ent-item-rm').forEach(function(b){b.addEventListener('click',function(){CRON_ENTREGA_ITEMS.splice(+this.dataset.i,1);renderEntItems();});});
+  box.querySelectorAll('.ent-item-rm').forEach(function(b){b.addEventListener('click',function(){if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}CRON_ENTREGA_ITEMS.splice(+this.dataset.i,1);renderEntItems();});});
 }
 function entregasHtml(cod){
   var pode=podeGerirObra(),admin=isAdmin();
@@ -1585,6 +1586,7 @@ function entregasHtml(cod){
   return h;
 }
 function salvarEntrega(){
+  if(obraCancelada()){mostrarToast('⛔ Obra cancelada — reative na aba Obras','error');return;}
   if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   if(obraSemFim()){mostrarToast('⛔ '+msgTravaFim(),'error');return;}
   var nome=document.getElementById('entNome').value.trim();
@@ -1614,7 +1616,7 @@ function salvarEntrega(){
   salvarTudo();renderizarCronograma();mostrarToast('✅ Entrega salva');
 }
 function inconformidadesHtml(cod){
-  var pode=podeGerirObra();
+  var pode=podeGerirObra()&&!obraCancelada();
   var list=inconformidadesDe(cod);
   var ci=contarInconformidades(cod);
   var h='<div class="cron-sec"><h4 class="dash-h">Inconformidades e ocorrências</h4>';
@@ -1633,7 +1635,7 @@ function inconformidadesHtml(cod){
   return h;
 }
 function issueFormHtml(cod){
-  if(!podeGerirObra())return '';
+  if(!podeGerirObra()||obraCancelada())return '';
   var ed=null;
   if(CRON_EDIT_ISSUE>=0)inconformidades.forEach(function(x){if(x.id===CRON_EDIT_ISSUE)ed=x;});
   var tips=(masterDeCod(cod)||{tipologias:[]}).tipologias;
@@ -1652,6 +1654,7 @@ function issueFormHtml(cod){
   return h;
 }
 function salvarIssue(){
+  if(obraCancelada()){mostrarToast('⛔ Obra cancelada — reative na aba Obras','error');return;}
   if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   if(obraSemFim()){mostrarToast('⛔ '+msgTravaFim(),'error');return;}
   var titulo=document.getElementById('issTitulo').value.trim();
@@ -1746,6 +1749,7 @@ function excluirIssue(id){
   salvarTudo();renderizarCronograma();mostrarToast('✅ Registro excluído');
 }
 function salvarMarco(card){
+  if(obraCancelada()){mostrarToast('⛔ Obra cancelada — reative na aba Obras','error');return;}
   if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   if(!card)return;
   var nome=card.dataset.marco;
@@ -1787,6 +1791,7 @@ function bindGanttObra(){
   if(addItem){
     renderEntItems();
     addItem.addEventListener('click',function(){
+      if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
       var tipo=document.getElementById('entItemTipo').value;
       var qtde=parseInt(document.getElementById('entItemQtde').value)||0;
       if(qtde<=0){mostrarToast('⚠️ Informe uma quantidade válida','error');return;}
@@ -1951,7 +1956,7 @@ function renderizarAgenda(){
   else{h+='<div class="table-scroll-x"><table><thead><tr><th>Data</th><th>Tipologia</th><th style="text-align:center;">Qtde</th><th>Responsável</th><th>Status</th><th>Observação</th><th>Ações</th></tr></thead><tbody>';
     ag.forEach(function(a){
       h+='<tr><td>'+escH(fmtTs(a.data))+'</td><td><strong>'+escH(a.tipo)+'</strong> '+escH(getDescricao(a.tipo))+'</td><td style="text-align:center;">'+fmtInt(a.qtde)+'</td><td>'+escH(a.responsavel||'—')+'</td><td>'+escH(a.status)+'</td><td>'+escH(a.obs||'—')+'</td><td>';
-      if(pode){
+      if(pode&&!obraCancelada()){
         if(a.status==='Concluída')h+='<span class="badge-extra" style="background:#e8f8ee;color:#1a7a4a;">✓ Concluída</span> ';
         else if(a.status==='Cancelada')h+='<span class="badge-extra" style="background:#fdecea;color:#c0392b;">Cancelada</span> ';
         else h+='<button class="btn btn-success btn-sm" data-ag-realizar="'+a.id+'">Realizar</button> <button class="btn btn-danger btn-sm" data-ag-cancelar="'+a.id+'">Cancelar</button> ';
@@ -1963,7 +1968,7 @@ function renderizarAgenda(){
       h+='</td></tr>';
     });
     h+='</tbody></table></div>';}
-  if(pode){
+  if(pode&&!obraCancelada()){
     var tipos=getTipos(); /* v4.3: c.tip é o mapa de datas do cronograma (não existe no master) — o select ficava vazio e Agendar sempre falhava */
     var ed=null;
     if(AG_EDIT_ID){ag.forEach(function(x){if(x.id===AG_EDIT_ID)ed=x;});if(!ed)AG_EDIT_ID=null;}
@@ -1972,12 +1977,14 @@ function renderizarAgenda(){
       +'<label>Data <input type="date" id="agData" class="sel-obra" value="'+(ed?escH(ed.data||''):(new Date().toISOString().slice(0,10)))+'"></label>'
       +'<label>Tipologia <select id="agTipo" class="sel-obra">'+tipos.map(function(t){return '<option value="'+escH(t)+'"'+(ed&&ed.tipo===t?' selected':'')+'>'+escH(t)+' — '+escH(getDescricao(t))+'</option>';}).join('')+'</select></label>'
       +'<label>Qtde <input type="number" id="agQtde" class="sel-obra" value="'+(ed?ed.qtde:1)+'" min="1" style="width:80px;"></label>'
-      +'<label>Responsável <input type="text" id="agResp" class="sel-obra" value="'+escH(ed?ed.responsavel||'':((usuarioLogado&&usuarioLogado.nome)||''))+'"></label>'
+      +'<label>Responsável <input type="text" id="agResp" class="sel-obra" value="'+escH(ed?ed.responsavel||'':((usuarioLogado&&usuarioLogado.usuario)||''))+'"></label>'
       +'<label>Status <select id="agStatus" class="sel-obra">'+AGENDA_STATUS.map(function(x){return '<option value="'+x+'"'+(x===stEd?' selected':'')+'>'+x+'</option>';}).join('')+'</select></label>'
       +'<label>Observação <input type="text" id="agObs" class="sel-obra" maxlength="200" placeholder="Observação (máx. 200)" value="'+escH(ed?ed.obs||'':'')+'"></label>'
       +'<button class="btn btn-primary" id="agSalvarBtn"><i class="fas fa-plus"></i> '+(ed?'Salvar alterações':'Agendar')+'</button>'
       +(ed?' <button class="btn" id="agCancelarEdBtn">Cancelar edição</button>':'')
       +'</div><div class="lone-note" style="margin-top:8px;">"Realizar" apenas marca o agendamento como feito — não lança unidades (os totais de instalação continuam vindo dos lançamentos).</div></div>';
+  }else if(obraCancelada()){
+    h+='<div class="lote-nota">⛔ Obra cancelada — agendamentos bloqueados até reativar.</div>';
   }else{
     h+='<div class="lote-nota">Seu perfil não tem permissão para agendar instalações (somente quem pode liberar).</div>';
   }
@@ -1989,12 +1996,16 @@ function renderizarAgenda(){
     if(ce)ce.onclick=function(){AG_EDIT_ID=null;renderizarAgenda();};
     box.querySelectorAll('[data-ag-realizar]').forEach(function(b){
       b.onclick=function(){
+        if(!hasPerm('liberar')){mostrarToast('⚠️ Sem permissão','error');return;}
+        if(obraCancelada()){mostrarToast('⛔ Obra cancelada — reative na aba Obras','error');return;}
         var arr=agendaDe(cod),it=null;arr.forEach(function(x){if(String(x.id)===b.dataset.agRealizar)it=x;});
         if(it){it.status='Concluída';it.realizadoEm=agoraLocal();salvarV4();regAuditoria('AGENDAMENTO_REALIZADO',cod+' · '+it.tipo+' × '+it.qtde+' em '+fmtTs(it.data));mostrarToast('Agendamento marcado como realizado.','success');renderizarAgenda();}
       };
     });
     box.querySelectorAll('[data-ag-cancelar]').forEach(function(b){
       b.onclick=function(){
+        if(!hasPerm('liberar')){mostrarToast('⚠️ Sem permissão','error');return;}
+        if(obraCancelada()){mostrarToast('⛔ Obra cancelada — reative na aba Obras','error');return;}
         var arr=agendaDe(cod),it=null;arr.forEach(function(x){if(String(x.id)===b.dataset.agCancelar)it=x;});
         if(it&&confirm('Cancelar este agendamento?')){it.status='Cancelada';salvarV4();regAuditoria('AGENDAMENTO_CANCELADO',cod+' · '+it.tipo+' × '+it.qtde+' em '+fmtTs(it.data));mostrarToast('Agendamento cancelado.','info');renderizarAgenda();}
       };
@@ -2008,6 +2019,7 @@ function renderizarAgenda(){
   }
 }
 function salvarAgendamento(){
+  if(obraCancelada()){mostrarToast('⛔ Obra cancelada — reative na aba Obras','error');return;}
   if(AG_EDIT_ID){if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}}
   else if(!hasPerm('liberar')){mostrarToast('⚠️ Sem permissão','error');return;}
   var cod=dadosXML.obra.codigo;
@@ -2020,14 +2032,14 @@ function salvarAgendamento(){
   if(AG_EDIT_ID){
     var it=null;arr.forEach(function(x){if(x.id===AG_EDIT_ID)it=x;});
     if(it){
-      it.data=d;it.tipo=t;it.qtde=q;it.responsavel=r||(usuarioLogado&&usuarioLogado.nome)||'—';it.status=st;it.obs=obs;
+      it.data=d;it.tipo=t;it.qtde=q;it.responsavel=r||(usuarioLogado&&usuarioLogado.usuario)||'—';it.status=st;it.obs=obs;
       salvarV4();regAuditoria('AGENDAMENTO_EDITADO',cod+' · '+t+' × '+q+' em '+fmtTs(d)+' · '+st);
       AG_EDIT_ID=null;mostrarToast('Agendamento atualizado.','success');renderizarAgenda();return;
     }
     AG_EDIT_ID=null;
   }
   var id=arr.length?Math.max.apply(null,arr.map(function(x){return x.id||0;}))+1:1;
-  arr.push({id:id,data:d,tipo:t,qtde:q,responsavel:r||(usuarioLogado&&usuarioLogado.nome)||'—',status:st,obs:obs,criadoEm:agoraLocal(),criadoPor:(usuarioLogado&&usuarioLogado.nome)||'Sistema'});
+  arr.push({id:id,data:d,tipo:t,qtde:q,responsavel:r||(usuarioLogado&&usuarioLogado.usuario)||'—',status:st,obs:obs,criadoEm:agoraLocal(),criadoPor:(usuarioLogado&&usuarioLogado.usuario)||'Sistema'});
   salvarV4();regAuditoria('AGENDAMENTO_CRIADO',cod+' · '+t+' × '+q+' em '+fmtTs(d)+' · '+st);
   mostrarToast('Instalação agendada para '+fmtTs(d)+'.','success');renderizarAgenda();
 }
@@ -2048,7 +2060,7 @@ function excluirAgendamento(id){
 
 /* ===== v4: banner de data de fim + trava de lançamentos + importação com datas/processos ===== */
 var XML_PENDENTE=null;
-var BANNER_FIM_CACHE='';
+var BANNER_FIM_CACHE='';var BANNER_FIM_DIGITADO={}; /* v4.4 (R-33): digitação do prazo preservada ao trocar de perfil */
 function verificarTravaFim(){
   // Trava: obra sem data de fim não aceita lançamentos de quem pode editar.
   if(!obraSemFim())return '';
@@ -2062,7 +2074,7 @@ function renderizarBannerFim(){
   var c=cronogramaDe(cod);
   var cache=cod+'|'+(c.endDate||'')+'|'+(c.startDate||'')+'|'+(usuarioLogado?usuarioLogado.tipo:'');
   if(cache===BANNER_FIM_CACHE&&box.innerHTML.trim())return; // preserva o que o usuário já digitou
-  BANNER_FIM_CACHE=cache;
+  BANNER_FIM_CACHE=cache;var _inp=document.getElementById('bannerFimData');if(_inp&&_inp.value)BANNER_FIM_DIGITADO[cod]=_inp.value;
   if(!hasPerm('liberar')){box.innerHTML='';return;}
   var semFim=!c.endDate;
   var h='<div class="banner-fim'+(semFim?' banner-fim-aviso':' banner-fim-ok')+'">'
@@ -2072,22 +2084,23 @@ function renderizarBannerFim(){
     +'</div>';
   box.innerHTML=h;
   var b=document.getElementById('bannerFimSalvar');
-  if(b)b.onclick=salvarDataFim;
+  if(b)b.onclick=salvarDataFim;var _inpR=document.getElementById('bannerFimData');if(!c.endDate&&BANNER_FIM_DIGITADO[cod]&&_inpR)_inpR.value=BANNER_FIM_DIGITADO[cod];
 }
 function salvarDataFim(){
   if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão','error');return;}
   var cod=dadosXML.obra.codigo;
   var c=cronogramaDe(cod);
-  var fim=document.getElementById('bannerFimData').value;
+  var fim=document.getElementById('bannerFimData').value;delete BANNER_FIM_DIGITADO[cod];
   if(!fim){mostrarToast('Informe a data de fim da obra.','error');return;}
   if(c.startDate&&fim<c.startDate){mostrarToast('A data de fim ('+fmtTs(fim)+') é anterior ao início ('+fmtTs(c.startDate)+').','error');return;}
   c.endDate=fim;salvarV4();
-  regAuditoria('CRONOGRAMA',cod,'Prazo definido: '+fmtTs(fim),usuarioLogado?usuarioLogado.nome:'Sistema');
+  regAuditoria('CRONOGRAMA',cod,'Prazo definido: '+fmtTs(fim),usuarioLogado?usuarioLogado.usuario:'Sistema');
   BANNER_FIM_CACHE='';renderizarBannerFim();renderizarDashboard();renderizarObras();renderizarFaixaSituacao();
   if(document.getElementById('tab-cron')&&document.getElementById('tab-cron').classList.contains('active'))renderizarCronograma();
   mostrarToast('✅ Data de fim salva: '+fmtTs(fim)+'. Lançamentos liberados.','success');
 }
 function abrirModalImportar(master){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão para importar obras','error');return;}
   XML_PENDENTE=master;
   var cod=master.obra.codigo;
   var hoje=new Date();var hj=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
@@ -2108,6 +2121,7 @@ function abrirModalImportar(master){
 }
 function fecharModalImportar(){XML_PENDENTE=null;document.getElementById('modalImportarObra').classList.remove('ativo');}
 function confirmarImportarObra(){
+  if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão para importar obras','error');return;}
   var master=XML_PENDENTE;if(!master){fecharModalImportar();return;}
   var ini=document.getElementById('impInicio').value,fim=document.getElementById('impFim').value;
   if(!ini){mostrarToast('Informe a data de início.','error');return;}
@@ -2124,7 +2138,7 @@ function confirmarImportarObra(){
   cronograma={startDate:ini,endDate:fim||'',stages:stages,tip:{},proc:{}};
   salvarV4();
   regAuditoria('OBRA_REGISTRADA',cod+' · '+master.obra.nome+' · '+master.tipologias.length+' tipologias · início '+fmtTs(ini)+(fim?' · fim '+fmtTs(fim):' · sem prazo'));
-  regAuditoria('CRONOGRAMA',cod,'Processos: '+stages.map(function(s){return ETAPA_NOME[s];}).join(' → '),usuarioLogado?usuarioLogado.nome:'Sistema');
+  regAuditoria('CRONOGRAMA',cod,'Processos: '+stages.map(function(s){return ETAPA_NOME[s];}).join(' → '),usuarioLogado?usuarioLogado.usuario:'Sistema');
   salvarTudo();fecharModalImportar();BANNER_FIM_CACHE='';
   renderizarTudo();renderizarBannerFim();
   mostrarToast('✅ Obra '+cod+' importada ('+fmtInt(master.tipologias.length)+' tipologias)'+(fim?' · prazo '+fmtTs(fim):' · sem prazo — defina a data de fim para liberar lançamentos'),fim?'success':'info');
@@ -2187,11 +2201,12 @@ function renderizarPermsObra(){
   box.innerHTML=h;
   box.querySelectorAll('[data-perm-obra]').forEach(function(cb){
     cb.addEventListener('change',function(){
+      if(!isAdmin()){this.checked=!this.checked;mostrarToast('⚠️ Somente o Administrador altera permissões por obra','error');return;}
       var p=this.dataset.permObra,cod=this.dataset.cod;
       permissoesDemo[p]=permissoesDemo[p]||{};
       permissoesDemo[p][cod]=this.checked;
       salvarV4();
-      regAuditoria('PERMISSAO_OBRA',p+' · '+cod+' → '+(this.checked?'visível':'oculta'),usuarioLogado?usuarioLogado.nome:'Sistema');
+      regAuditoria('PERMISSAO_OBRA',p+' · '+cod+' → '+(this.checked?'visível':'oculta'),usuarioLogado?usuarioLogado.usuario:'Sistema');
       mostrarToast('Permissão atualizada: '+p+' '+(this.checked?'vê':'não vê')+' '+cod+'.','success');
     });
   });
@@ -2208,9 +2223,10 @@ function renderizarMarcaBox(){
     +'<button class="btn btn-primary btn-sm" id="marcaSalvarBtn"><i class="fas fa-check"></i> Salvar marca</button></div>';
   var b=document.getElementById('marcaSalvarBtn');
   if(b)b.onclick=function(){
+    if(!isAdmin()){mostrarToast('⚠️ Somente o Administrador altera a marca do cliente','error');return;}
     marcaCliente={nome:document.getElementById('marcaNome').value.trim(),logo:document.getElementById('marcaLogo').value.trim()};
     salvarV4();renderizarMarcaHeader();
-    regAuditoria('MARCA_CLIENTE','Marca definida: '+(marcaCliente.nome||'(vazia)'),usuarioLogado?usuarioLogado.nome:'Sistema');
+    regAuditoria('MARCA_CLIENTE','Marca definida: '+(marcaCliente.nome||'(vazia)'),usuarioLogado?usuarioLogado.usuario:'Sistema');
     if(document.getElementById('tab-rel')&&document.getElementById('tab-rel').classList.contains('active'))renderizarRelatorio();
     mostrarToast('✅ Marca do cliente salva.','success');
   };
@@ -2284,8 +2300,8 @@ document.getElementById('dashTecBody').innerHTML=th||'<tr><td colspan="6" style=
 /* 8) OPR/OPC no período */
 var ah='';opsAvulsasAtivas().filter(function(o){return dentroPer(o,per)&&(!DASH_PREFS.fam||familiaDe(o.tipo)===DASH_PREFS.fam);}).forEach(function(o){ah+='<tr><td><span class="tp-badge '+opTipoDe(o).toLowerCase()+'">'+opTipoDe(o)+'</span> '+escH(o.nomen)+'</td><td>'+escH(o.categoria)+'</td><td>'+escH(o.motivo)+'</td><td style="text-align:right;">'+fmtInt(o.qtde)+'</td><td>'+escH(o.status)+'</td></tr>';});
 document.getElementById('dashAvulsasBody').innerHTML=ah||'<tr><td colspan="5" style="text-align:center;color:#8a9bb0;font-style:italic;">Sem OPR/OPC no período</td></tr>';}
-function abrirModalMetas(){if(!(isAdmin()||hasPerm('obras'))){mostrarToast('⚠️ Sem permissão para definir metas','error');return;}var h='';ETAPAS_LANC.forEach(function(s){var m=metas[s]||{};h+='<div class="meta-row"><span class="stg" style="background:'+ETAPA_COR[s]+';">'+ETAPA_NOME[s]+'</span><label>Meta %<input type="number" min="0" max="100" step="0.1" id="metaPct_'+s+'" value="'+(m.pct||'')+'"></label><label>Prazo<input type="date" id="metaPrazo_'+s+'" value="'+(m.prazo||'')+'"></label></div>';});document.getElementById('metasBox').innerHTML=h;document.getElementById('modalMetas').classList.add('ativo');}
-function salvarMetas(){var nm={};var erro='';ETAPAS_LANC.forEach(function(s){var p=parseFloat(document.getElementById('metaPct_'+s).value);var d=document.getElementById('metaPrazo_'+s).value;if(!isNaN(p)&&(p<0||p>100))erro='A meta deve estar entre 0 e 100%.';if(!isNaN(p)&&p>0)nm[s]={pct:p,prazo:d||''};});if(erro){mostrarToast('⚠️ '+erro,'error');return;}metas=nm;regAuditoria('METAS_ALTERADAS',ETAPAS_LANC.map(function(s){return ETAPA_NOME[s]+': '+(nm[s]?nm[s].pct+'%'+(nm[s].prazo?' até '+nm[s].prazo:''):'—');}).join(' | '));salvarTudo();document.getElementById('modalMetas').classList.remove('ativo');renderizarDashboard();mostrarToast('✅ Metas salvas');}
+function abrirModalMetas(){if(!isAdmin()){mostrarToast('⚠️ Sem permissão para definir metas','error');return;}var h='';ETAPAS_LANC.forEach(function(s){var m=metas[s]||{};h+='<div class="meta-row"><span class="stg" style="background:'+ETAPA_COR[s]+';">'+ETAPA_NOME[s]+'</span><label>Meta %<input type="number" min="0" max="100" step="0.1" id="metaPct_'+s+'" value="'+(m.pct||'')+'"></label><label>Prazo<input type="date" id="metaPrazo_'+s+'" value="'+(m.prazo||'')+'"></label></div>';});document.getElementById('metasBox').innerHTML=h;document.getElementById('modalMetas').classList.add('ativo');}
+function salvarMetas(){if(!isAdmin()){mostrarToast('⚠️ Somente o Administrador altera as metas','error');return;}var nm={};var erro='';ETAPAS_LANC.forEach(function(s){var p=parseFloat(document.getElementById('metaPct_'+s).value);var d=document.getElementById('metaPrazo_'+s).value;if(!isNaN(p)&&(p<0||p>100))erro='A meta deve estar entre 0 e 100%.';if(!isNaN(p)&&p>0)nm[s]={pct:p,prazo:d||''};});if(erro){mostrarToast('⚠️ '+erro,'error');return;}metas=nm;regAuditoria('METAS_ALTERADAS',ETAPAS_LANC.map(function(s){return ETAPA_NOME[s]+': '+(nm[s]?nm[s].pct+'%'+(nm[s].prazo?' até '+nm[s].prazo:''):'—');}).join(' | '));salvarTudo();document.getElementById('modalMetas').classList.remove('ativo');renderizarDashboard();mostrarToast('✅ Metas salvas');}
 
 /* ===== Crítica de reimportação do XML (Igual / Alterado / Novo / Removido) ===== */
 var CAMPOS_CRIT=[['qtde','Qtde'],['descr','Descrição'],['local','Localização'],['largura','Largura'],['altura','Altura'],['areaUnit','Área un.'],['pesoUnit','Peso un.'],['linha','Linha'],['grupo','Grupo'],['codesqd','Cód. esquadria'],['projetista','Projetista'],['cor','Cód. tratamento'],['tratamento','Tratamento'],['descrVidro','Vidro']];
@@ -2318,13 +2334,13 @@ document.getElementById('critAplicar').style.display=c.mudou?'':'none';
 setTxt('critResumo',c.mudou?'Foram encontradas diferenças entre o XML e a base. Revise antes de aplicar.':'O XML é idêntico à base: nenhuma alteração a aplicar.');}
 function abrirCritica(cr,master,velho){_crit={cr:cr,master:master,velho:velho};_critFiltro={Alterado:true,Novo:true,Removido:true,Igual:false};renderCritica();document.getElementById('modalCritica').classList.add('ativo');}
 function fecharCritica(){document.getElementById('modalCritica').classList.remove('ativo');_crit=null;}
-function aplicarCritica(){if(!_crit)return;var c=_crit;var m=JSON.parse(JSON.stringify(c.master));var nm={};m.tipologias.forEach(function(t){nm[t.tipo]=true;});var ld=lancDe(c.velho.obra.codigo);var mantidas=0,excluidas=0;
+function aplicarCritica(){if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão para importar obras','error');return;}if(!_crit)return;var c=_crit;var m=JSON.parse(JSON.stringify(c.master));var nm={};m.tipologias.forEach(function(t){nm[t.tipo]=true;});var ld=lancDe(c.velho.obra.codigo);var mantidas=0,excluidas=0;
 c.velho.tipologias.forEach(function(v){if(nm[v.tipo])return;if(v.obsoleta||temLanc(ld,v.tipo)){var o=JSON.parse(JSON.stringify(v));if(!o.obsoleta){o.qtdeAnterior=o.qtde;o.qtde=0;o.obsoleta=true;}m.tipologias.push(o);mantidas++;}else excluidas++;});
 var k=c.cr.cont;var resumo='Alterado '+k.Alterado+' · Novo '+k.Novo+' · Removido '+k.Removido+' ('+mantidas+' mantida(s) por ter lançamentos, '+excluidas+' excluída(s)) · Igual '+k.Igual+(c.cr.obra.length?' · '+c.cr.obra.length+' campo(s) da obra/cliente':'');
 ['status','cancelMotivo','cancelPor','cancelEm'].forEach(function(k){if(c.velho.obra[k]!==undefined)m.obra[k]=c.velho.obra[k];});fecharCritica();aplicarMaster(m);regAuditoria('XML_REIMPORTADO',m.obra.codigo+' · '+resumo);salvarTudo();renderizarTudo();mostrarToast('✅ XML reimportado: '+resumo);}
-function importarXmlObra(master){var cod=master.obra.codigo;if(obrasExcluidas[cod]){delete obrasExcluidas[cod];salvarExcluidas();delete obrasRegistry[cod];}var velho=(cod===dadosXML.obra.codigo)?dadosXML:obrasRegistry[cod];
+function importarXmlObra(master){if(!podeGerirObra()){mostrarToast('⚠️ Sem permissão para importar obras','error');return;}var cod=master.obra.codigo;if(obrasExcluidas[cod]){delete obrasExcluidas[cod];salvarExcluidas();delete obrasRegistry[cod];}var velho=(cod===dadosXML.obra.codigo)?dadosXML:obrasRegistry[cod];
 if(!velho){abrirModalImportar(master);return;}
-var cr=criticaXml(velho,master);regAuditoria('XML_CRITICA',cod+' · Igual '+cr.cont.Igual+' · Alterado '+cr.cont.Alterado+' · Novo '+cr.cont.Novo+' · Removido '+cr.cont.Removido+(cr.obra.length?' · obra/cliente: '+cr.obra.length+' campo(s)':''));persistirLocal();abrirCritica(cr,master,velho);}
+var cr=criticaXml(velho,master);if(cr.cont.Alterado===0&&cr.cont.Novo===0&&cr.cont.Removido===0&&!cr.obra.length){mostrarToast('ℹ️ Obra '+cod+' já importada — abrindo a obra existente.');trocarObra(cod);return;}regAuditoria('XML_CRITICA',cod+' · Igual '+cr.cont.Igual+' · Alterado '+cr.cont.Alterado+' · Novo '+cr.cont.Novo+' · Removido '+cr.cont.Removido+(cr.obra.length?' · obra/cliente: '+cr.obra.length+' campo(s)':''));persistirLocal();abrirCritica(cr,master,velho);}
 /* ===== Importação em lote (com etapas, OPR/OPC e regras) ===== */
 function extrairTipoDeOp(raw){var m=String(raw||'').match(/\[([^\]]+)\]/);var t=m?acharTipoExato(m[1]):null;if(t)return t;return acharTipo(String(raw||'').replace(/^\s*OP[RC]\s*[-–]?\s*/i,''));}
 function processarLote(rows){var out=[];if(!rows.length)return out;var map=mapearColunas(rows[0]);var temHeader=map.tipo>-1&&map.qtde>-1;var start=temHeader?1:0;if(!temHeader)map={tipo:0,qtde:1,data:2,etapa:3,tecnico:4};
@@ -2349,7 +2365,7 @@ var etapaCell=(it.destino==='liberacao'&&!bloq&&!it.dupOpt)?'<select class="lote
 h+='<tr class="'+cls+'"><td>'+fmtInt(it.linha)+'</td><td>'+escH(it.tipoRaw)+'</td><td>'+(it.tipoSel?escH(it.tipoSel):'—')+'</td><td>'+etapaCell+'</td><td style="text-align:right;">'+fmtInt(it.qtde)+'</td><td>'+escH(fmtTs(it.data))+'</td><td>'+escH(it.tecnico||'—')+'</td><td>'+cell+'</td></tr>';});
 tb.innerHTML=h||'<tr><td colspan="8" style="text-align:center;">Nenhuma linha</td></tr>';
 tb.querySelectorAll('select.lote-sel').forEach(function(s2){s2.addEventListener('change',function(){var it=lotePendente[+this.dataset.idx];var k=this.dataset.k;if(k==='dest'){it.destino=this.value;if(this.value==='complementar')it.opTipo='OPC';else if(this.value==='opavulsa')it.opTipo='OPR';}else if(k==='dest2'){it.destino=this.value;if(this.value==='complementar'&&!it.categoria)it.categoria='Perfis';}else if(k==='tipo'){it.tipoSel=this.value||null;}else if(k==='cat'){it.categoria=this.value;}else if(k==='stage'){it.stage=this.value;}recalcLote();renderLoteTable();});});}
-function confirmarLote(){if(obraCancelada()){mostrarToast('⛔ Obra cancelada — reative na aba Obras para lançar','error');return;}var _tf3=verificarTravaFim();if(_tf3){mostrarToast(_tf3,'error');return;}var nLib=0,nExtra=0,nOp=0,nComp=0,nBloq=0;loteTecNovos.forEach(function(x){if(x.acao==='add'&&tecnicos.indexOf(x.nome)===-1){tecnicos.push(x.nome);garantirTecInfo(x.nome);}});
+function confirmarLote(){if(!hasPerm('lote')){mostrarToast('⚠️ Sem permissão para importar lote','error');return;}if(obraCancelada()){mostrarToast('⛔ Obra cancelada — reative na aba Obras para lançar','error');return;}var _tf3=verificarTravaFim();if(_tf3){mostrarToast(_tf3,'error');return;}var nLib=0,nExtra=0,nOp=0,nComp=0,nBloq=0;if(hasPerm('tecnicos')){loteTecNovos.forEach(function(x){if(x.acao==='add'&&tecnicos.indexOf(x.nome)===-1){tecnicos.push(x.nome);garantirTecInfo(x.nome);}});}
 lotePendente.forEach(function(it){if(it.err||it.errRegra){if(it.errRegra&&it.destino!=='descartar')nBloq++;return;}if(it.dup)return;if(it.destino==='ignorar'||it.destino==='descartar')return;var tf=tecFinal(it.tecnico)||usuarioLogado.usuario;
 if(it.destino==='liberacao'){if(!it.tipoSel)return;nLib++;if(it.extra)nExtra++;liberacoes.push({id:nextId++,tipo:it.tipoSel,qtde:it.qtde,data:it.data,stage:it.stage||'liberada',opNum:'',opTipo:'OP',etapa:it.etapa||'',tecnico:tf,extra:it.extra,cancelada:false,criadoEm:agoraLocal(),criadoPor:usuarioLogado.usuario});}
 else if(it.destino==='opavulsa'||it.destino==='complementar'){if(!it.tipoSel)return;var tp=(it.destino==='complementar')?'OPC':'OPR';var num=tp+'-'+p2(opsAvulsas.filter(function(o){return opTipoDe(o)===tp;}).length+1);if(tp==='OPR'){nOp++;opsAvulsas.push({id:nextOpId++,nomen:'OPR - ['+it.tipoSel+']',num:num,opTipo:'OPR',categoria:'Sala de OP',motivo:'Outros',code:'RET: OUTROS',tipo:it.tipoSel,qtde:it.qtde,data:it.data,tecnico:tf,obs:it.etapa?('Importado da planilha · '+it.etapa):'Importado da planilha',status:'Aberta',cancelada:false,criadoEm:agoraLocal(),criadoPor:usuarioLogado.usuario});}else{nComp++;opsAvulsas.push({id:nextOpId++,nomen:'OPC - ['+it.tipoSel+']',num:num,opTipo:'OPC',categoria:it.categoria||'Perfis',motivo:'OP Complementar',code:'COMPL',tipo:it.tipoSel,qtde:it.qtde,data:it.data,tecnico:tf,obs:'OPC importada da planilha'+(it.etapa?(' · '+it.etapa):''),status:'Aberta',cancelada:false,complementar:true,criadoEm:agoraLocal(),criadoPor:usuarioLogado.usuario});}}});
@@ -2426,13 +2442,17 @@ function salvarV4(){
 var notificacoes=[],anexos=[];
 var NOTIF_LIMITE=50,NOTIF_FILTRO_PERFIL='',NOTIF_FILTRO_LIDA='';
 var ANEXO_MAX_ARQ=1048576,ANEXO_MAX_OBRA=2097152;
+/* v4.4 (R-06): mesmas listas do completo — allowlist por categoria + blocklist */
+var ANEXO_EXT_OK=['jpg','jpeg','png','webp','gif','pdf','xlsx','xls','csv','docx'];
+var ANEXO_EXT_BLOQ=['exe','bat','sh','js','html','svg','php','asp','aspx'];
+function anexoTipoPermitido(nome){var ext=(String(nome||'').split('.').pop()||'').toLowerCase();if(ANEXO_EXT_BLOQ.indexOf(ext)>-1)return false;return ANEXO_EXT_OK.indexOf(ext)>-1;}
 var NOTIF_PERFIL_NOME={admin:'Administrador',pcp:'Coordenação PCP',operador:'Operador Fábrica',cliente:'Cliente'};
 var NOTIFICACOES_SEED=[
 {id:1,para:'operador',titulo:'Obra 0007 entregue',corpo:'Shopping Parque do Cocó: entrega total aceita, termo TERMO-DEMO-001 assinado em 30/10/2026.',canal:'painel',lida:false,criadaEm:'2026-10-30 18:00',obra:'FS2026-00-0007',origem:'seed'},
 {id:2,para:'pcp',titulo:'Inconformidade aberta na 0009',corpo:'Vedação incompleta na JV06 × 2, aberta em 06/11/2026 por Coordenação PCP.',canal:'painel',lida:false,criadaEm:'2026-11-06 09:00',obra:'FS2026-00-0009',origem:'seed'},
 {id:3,para:'admin',titulo:'Entrega em revisão na 0009',corpo:'Torre 1 (parcial) aguarda revisão desde 05/11/2026, sem termo assinado.',canal:'painel',lida:false,criadaEm:'2026-11-05 17:00',obra:'FS2026-00-0009',origem:'seed'},
 {id:4,para:'cliente',titulo:'Entrega aceita na 0007',corpo:'Sua obra Shopping Parque do Cocó teve a entrega total aceita em 30/10/2026.',canal:'painel',lida:false,criadaEm:'2026-10-30 18:00',obra:'FS2026-00-0007',origem:'seed'},
-{id:5,para:'operador',titulo:'Obra 0008 cancelada',corpo:'Edifício Mirante do Sol foi cancelada — lançamentos bloqueados até reativar.',canal:'painel',lida:true,criadaEm:'2026-09-02 10:00',obra:'FS2026-00-0008',origem:'seed'},
+{id:5,para:'operador',titulo:'Obra 0008 cancelada',corpo:'Edifício Mirante do Sol foi cancelado — lançamentos bloqueados até reativar.',canal:'painel',lida:true,criadaEm:'2026-09-02 10:00',obra:'FS2026-00-0008',origem:'seed'},
 {id:6,para:'pcp',titulo:'Extra na obra 0002',corpo:'Aldeota Plaza: 120 liberadas de 115 contratadas (104,35%).',canal:'painel',lida:false,criadaEm:'2026-10-20 16:00',obra:'FS2026-00-0002',origem:'seed'}
 ];
 function proximoNotifId(){var mx=0;notificacoes.forEach(function(n){if(n.id>mx)mx=n.id;});return mx+1;}
@@ -2443,7 +2463,7 @@ function atualizarSino(){var c=document.getElementById('sinoCont');if(!c)return;
    O autor nunca recebe notificação da própria ação. */
 function emitirNotificacao(tipo,d){
   var mapa={
-    lancamento:{para:['pcp'],titulo:'Novo lançamento',corpo:'Lançamento: '+d.tipo+' +'+fmtInt(d.qtde)+' '+ETAPA_NOME[d.stage||'liberada']+' na '+d.obra+' por '+(d.tecnico||'—')+' (OP '+(d.opNum||'—')+').'},
+    lancamento:{para:['admin','pcp'],titulo:'Novo lançamento',corpo:'Lançamento: '+d.tipo+' +'+fmtInt(d.qtde)+' '+ETAPA_NOME[d.stage||'liberada']+' na '+d.obra+' por '+(d.tecnico||'—')+' (OP '+(d.opNum||'—')+').'},
     lancamento_cancelado:{para:['admin','pcp'],titulo:'Lançamento cancelado',corpo:'Lançamento cancelado: '+d.tipo+' × '+fmtInt(d.qtde)+' na '+d.obra+' — motivo: '+(d.motivo||'—')+'.'},
     lancamento_restaurado:{para:['admin','pcp'],titulo:'Lançamento restaurado',corpo:'Lançamento restaurado: '+d.tipo+' × '+fmtInt(d.qtde)+' na '+d.obra+'.'},
     entrega_criada:{para:['admin','pcp'],titulo:'Entrega criada',corpo:'Entrega criada: '+d.nome+' ('+d.tipo+') na '+d.obra+'.'},
@@ -2463,7 +2483,7 @@ function emitirNotificacao(tipo,d){
   atualizarSino();
   var tn=document.getElementById('tab-notif');if(tn&&tn.classList.contains('active'))renderizarNotificacoes();
 }
-function marcarNotificacaoLida(id){var ach=false;notificacoes.forEach(function(n){if(n.id===id&&!n.lida){n.lida=true;ach=true;}});if(!ach)return;salvarJSONLocal('fg_notificacoes',notificacoes);var t='';notificacoes.forEach(function(n){if(n.id===id)t=n.titulo;});regAuditoria('NOTIFICACAO_LIDA',t);salvarTudo();atualizarSino();renderizarNotificacoes();}
+function marcarNotificacaoLida(id){var alvo=null;notificacoes.forEach(function(n){if(n.id===id)alvo=n;});if(!alvo)return;var p=perfilChave()||'admin';if(alvo.para!==p&&!isAdmin()){mostrarToast('⚠️ Sem permissão para marcar esta notificação','error');return;}var ach=false;notificacoes.forEach(function(n){if(n.id===id&&!n.lida){n.lida=true;ach=true;}});if(!ach)return;salvarJSONLocal('fg_notificacoes',notificacoes);var t='';notificacoes.forEach(function(n){if(n.id===id)t=n.titulo;});regAuditoria('NOTIFICACAO_LIDA',t);salvarTudo();atualizarSino();renderizarNotificacoes();}
 function criarNotificacaoManual(){
   if(!isAdmin()){mostrarToast('⚠️ Somente o Administrador cria notificações','error');return;}
   var para=document.getElementById('notifNovoPara').value;
@@ -2472,6 +2492,7 @@ function criarNotificacaoManual(){
   if(!titulo){mostrarToast('⚠️ Informe o título da notificação','error');return;}
   if(titulo.length>180){mostrarToast('⚠️ Título com no máximo 180 caracteres','error');return;}
   if(!corpo){mostrarToast('⚠️ Informe o texto da notificação','error');return;}
+  var meuPerfil=perfilChave()||'admin';if(para===meuPerfil){mostrarToast('⚠️ Você é o destinatário desta notificação — escolha outro perfil','error');return;}
   notificacoes.unshift({id:proximoNotifId(),para:para,titulo:titulo,corpo:corpo,canal:'painel',lida:false,criadaEm:agoraLocal(),obra:'',origem:'manual'});
   if(notificacoes.length>200)notificacoes.length=200;
   salvarJSONLocal('fg_notificacoes',notificacoes);
@@ -2513,7 +2534,7 @@ function getDescricaoDe(cod,tipo){var m=masterDeCod(cod);if(!m)return '';var f=n
 function kanbanCardHtml(opNum,tipo,tecnico,qtde,cod,nomeObra){
   var descr=getDescricaoDe(cod||dadosXML.obra.codigo,tipo)||tipo;
   var obraHtml=(cod&&nomeObra)?'<div class="kc-obra">'+escH(cod)+' · '+escH(nomeObra)+'</div>':'';
-  return '<div class="kanban-card" data-tipo="'+escH(tipo)+'" data-cod="'+escH(cod||'')+'"><div class="kc-op" title="'+escH(descr)+'">'+escH(descr)+'</div><div class="kc-tipo">'+escH(tipo)+' · '+escH(opNum)+'</div><div class="kc-tec">'+escH(tecnico||'Técnico não informado')+'</div><div class="kc-qtd">'+fmtInt(qtde)+' un.</div>'+obraHtml+'</div>';
+  return '<div class="kanban-card" data-tipo="'+escH(tipo)+'" data-cod="'+escH(cod||'')+'"><div class="kc-op" title="'+escH(descr)+'">'+escH(descr)+'</div><div class="kc-tipo">'+escH(tipo)+(opNum?' · '+escH(opNum):'')+'</div><div class="kc-tec">'+escH(tecnico||'Técnico não informado')+'</div><div class="kc-qtd">'+fmtInt(qtde)+' un.</div>'+obraHtml+'</div>';
 }
 var KANBAN_FILTRO='';
 function renderizarKanban(){
@@ -2558,14 +2579,14 @@ function renderizarKanban(){
     var label=st==='sem-etapa'?'Sem etapa':(ETAPA_NOME[st]||st);
     h+='<div class="kanban-col" data-stage="'+st+'"><div class="kanban-col-h"><span>'+escH(label)+'</span><span class="n">'+cards.length+'</span></div>';
     if(!cards.length)h+='<div class="kanban-vazio">Nada nesta etapa.</div>';
-    cards.forEach(function(x){h+=kanbanCardHtml(x.r.opNum||'—',x.r.tipo,x.r.tecnico,x.r.qtde,todas?x.cod:null,todas?x.nome:null);});
+    cards.forEach(function(x){h+=kanbanCardHtml(x.r.opNum||'',x.r.tipo,x.r.tecnico,x.r.qtde,todas?x.cod:null,todas?x.nome:null);});
     h+='</div>';
   });
   var avulsas=[];
   fontes.forEach(function(f){f.ops.forEach(function(o){avulsas.push({o:o,cod:f.cod,nome:f.nome});});});
   h+='<div class="kanban-col" data-stage="opr"><div class="kanban-col-h"><span>OPR / OPC</span><span class="n">'+avulsas.length+'</span></div>';
   if(!avulsas.length)h+='<div class="kanban-vazio">Nada nesta etapa.</div>';
-  avulsas.forEach(function(x){h+=kanbanCardHtml(x.o.num||'—',x.o.tipo,x.o.tecnico,x.o.qtde,todas?x.cod:null,todas?x.nome:null);});
+  avulsas.forEach(function(x){h+=kanbanCardHtml(x.o.num||'',x.o.tipo,x.o.tecnico,x.o.qtde,todas?x.cod:null,todas?x.nome:null);});
   h+='</div></div></div>';
   box.innerHTML=h;
   var sel=document.getElementById('kanbanFiltro');
@@ -2579,14 +2600,14 @@ function renderizarKanban(){
   });});
 }
 function anexosDe(cod){if(cod===dadosXML.obra.codigo)return anexos;return lerJSONLocal(chaveObra('anexos',cod),[])||[];}
-function anexosTamanhoTotal(){var t=0;anexos.forEach(function(a){t+=(a.dados||'').length;});return t;}
+function anexosTamanhoTotal(){var t=0;anexos.forEach(function(a){t+=(a.tamanho||0);});return t;} /* v4.4 (R-32): teto por bytes reais do arquivo, não base64 */
 function salvarAnexos(){try{return !!StorageManager.setItem(chave('anexos'),JSON.stringify(anexos));}catch(e){return false;}}
 function podeEnviarAnexo(){return !!usuarioLogado&&usuarioLogado.tipo!=='visitante';}
 function renderizarAnexos(){
   var box=document.getElementById('anexosBox');if(!box)return;
   var cod=dadosXML.obra.codigo;
   if(!obraVisivel(cod)){box.innerHTML='';return;}
-  var podeEnviar=podeEnviarAnexo(),admin=isAdmin();
+  var podeEnviar=podeEnviarAnexo()&&!obraCancelada(),admin=isAdmin();
   var total=anexosTamanhoTotal();
   var h='<div class="cron-sec"><div class="eyebrow">DOCUMENTOS E QUALIDADE</div><h4 class="dash-h">Anexos da obra</h4><div class="lote-nota">Fotos, desenhos e documentos ficam armazenados com referência persistente.</div>';
   if(podeEnviar)h+='<div style="margin:8px 0;"><button class="btn btn-primary btn-sm" id="anexoEnviarBtn"><i class="fas fa-upload"></i> Enviar arquivo</button> <span class="lote-nota" style="display:inline;">Máx. 1 MB por arquivo · teto de 2 MB por obra · '+fmtInt(Math.round(total/1024))+' KB usados</span></div>';
@@ -2603,13 +2624,15 @@ function renderizarAnexos(){
 function enviarAnexo(file){
   if(!podeEnviarAnexo()){mostrarToast('⚠️ Sem permissão para enviar anexos','error');return;}
   if(!file)return;
+  if(!anexoTipoPermitido(file.name)){mostrarToast('⚠️ Tipo de arquivo não permitido (imagens, PDF, planilha ou CSV)','error');return;}
+  if(obraCancelada()){mostrarToast('⛔ Obra cancelada — reative na aba Obras','error');return;}
   if(file.size>ANEXO_MAX_ARQ){mostrarToast('⚠️ O arquivo deve ter no máximo 1 MB','error');return;}
-  var estimado=anexosTamanhoTotal()+Math.ceil(file.size*4/3)+40;
+  var estimado=anexosTamanhoTotal()+file.size;
   if(estimado>ANEXO_MAX_OBRA){mostrarToast('⚠️ Os anexos desta obra já somam '+fmt2(anexosTamanhoTotal()/1048576)+' MB — remova um arquivo para enviar outro.','error');return;}
   var r=new FileReader();
   r.onload=function(e){
     var dados=e.target.result;
-    if(anexosTamanhoTotal()+dados.length>ANEXO_MAX_OBRA){mostrarToast('⚠️ Os anexos desta obra já somam '+fmt2(anexosTamanhoTotal()/1048576)+' MB — remova um arquivo para enviar outro.','error');return;}
+    if(anexosTamanhoTotal()+file.size>ANEXO_MAX_OBRA){mostrarToast('⚠️ Os anexos desta obra já somam '+fmt2(anexosTamanhoTotal()/1048576)+' MB — remova um arquivo para enviar outro.','error');return;}
     var mx=0;anexos.forEach(function(a){if(a.id>mx)mx=a.id;});
     var novo={id:mx+1,nome:file.name,tipo:file.type||'arquivo',tamanho:file.size,dados:dados,criadoEm:agoraLocal(),criadoPor:usuarioLogado?usuarioLogado.usuario:'—'};
     anexos.unshift(novo);
@@ -2730,7 +2753,11 @@ function obraSemFim(){if(dadosXML.obra.status==='cancelada')return false;var c=c
 function msgTravaFim(){return 'Obra sem data de fim (prazo) — defina o prazo no banner acima para liberar lançamentos.';}
 
 function renderizarTudo(){renderizarBannerFim();atualizarBannerObra();renderizarTecnicos();renderizarUsuarios();renderizarOps();renderizarDashboard();renderizarObras();preencherSelectTecnicos();preencherFamFiltro();renderizarCards();var _tc=document.getElementById('tab-cron');if(_tc&&_tc.classList.contains('active'))renderizarCronograma();var _tr=document.getElementById('tab-rel');if(_tr&&_tr.classList.contains('active'))renderizarRelatorio();var _ta=document.getElementById('tab-agenda');if(_ta&&_ta.classList.contains('active'))renderizarAgenda();renderizarAnexos();atualizarSino();var _tk=document.getElementById('tab-kanban');if(_tk&&_tk.classList.contains('active'))renderizarKanban();var _tn=document.getElementById('tab-notif');if(_tn&&_tn.classList.contains('active'))renderizarNotificacoes();}
-function iniciarApp(){atualizarBannerObra();var lh=document.getElementById('logoHeader');if(lh)lh.innerHTML=LOGO_SVG;setTxt('userName',usuarioLogado.usuario);var rb=document.getElementById('userRole');rb.textContent=usuarioLogado.tipo==='admin'?'Admin':(usuarioLogado.tipo==='visitante'?'Visitante':'Operador');rb.className='role-badge'+(usuarioLogado.tipo==='admin'?'':(usuarioLogado.tipo==='visitante'?' visitante':' custom'));document.getElementById('tabAudBtn').style.display=hasPerm('auditoria')?'':'none';document.getElementById('tabUsuBtn').style.display=isAdmin()?'':'none';var _kb=document.getElementById('tabKanbanBtn');if(_kb)_kb.style.display=podeGerirObra()?'':'none';renderizarMarcaHeader();var vis={resetBtn:hasPerm('reset'),importLoteBtn:hasPerm('lote'),resetOpsBtn:hasPerm('reset'),btnAddObra:hasPerm('obras'),repoCfgBtn:isAdmin(),addUserBtn:isAdmin(),addTecnicoBtn:hasPerm('tecnicos'),novaOpBtn:hasPerm('ops')};for(var id in vis){var el=document.getElementById(id);if(el)el.style.display=vis[id]?'':'none';}renderizarTudo();renderizarRefs();renderizarAuditoria('');if(window.__fgBound)return;window.__fgBound=true;document.querySelectorAll('.card-resumo').forEach(function(c){c.addEventListener('click',function(){abrirResumo(this.dataset.tipo);});});document.getElementById('buscaInput').addEventListener('input',renderizarCards);document.getElementById('resetBtn').addEventListener('click',function(){if(!hasPerm('reset'))return;if(confirm('⚠️ Remover TODOS os registros de liberação?')){regAuditoria('RESET_LIBERACOES','');liberacoes=[];nextId=1;salvarTudo();renderizarCards();mostrarToast('🔄 Registros removidos');}});document.getElementById('resetOpsBtn').addEventListener('click',function(){if(!hasPerm('reset'))return;if(confirm('⚠️ Apagar TODAS as OPs avulsas/complementares desta obra?')){regAuditoria('RESET_OPS','');opsAvulsas=[];nextOpId=1;salvarTudo();renderizarOps();mostrarToast('🔄 OPs avulsas removidas');}});document.getElementById('importLoteBtn').addEventListener('click',function(){if(!hasPerm('lote')){mostrarToast('⚠️ Sem permissão','error');return;}document.getElementById('loteInput').click();});document.getElementById('loteInput').addEventListener('change',function(){var f=this.files[0];if(f)lerArquivoLote(f);this.value='';});document.getElementById('loteCancelarBtn').addEventListener('click',fecharModalLote);document.getElementById('loteConfirmarBtn').addEventListener('click',confirmarLote);document.getElementById('modalLote').addEventListener('click',function(e){if(e.target===this)fecharModalLote();});document.getElementById('modalCancelar').addEventListener('click',fecharModal);document.getElementById('modalSalvar').addEventListener('click',salvarRegistro);document.getElementById('modalRegistro').addEventListener('click',function(e){if(e.target===this)fecharModal();});document.getElementById('modalTipo').addEventListener('change',atualizarDisponivel);bindExtras();
+function iniciarApp(){atualizarBannerObra();var lh=document.getElementById('logoHeader');if(lh)lh.innerHTML=LOGO_SVG;setTxt('userName',usuarioLogado.usuario);var rb=document.getElementById('userRole');rb.textContent=usuarioLogado.tipo==='admin'?'Admin':(usuarioLogado.tipo==='visitante'?'Visitante':'Operador');rb.className='role-badge'+(usuarioLogado.tipo==='admin'?'':(usuarioLogado.tipo==='visitante'?' visitante':' custom'));document.getElementById('tabAudBtn').style.display=hasPerm('auditoria')?'':'none';document.getElementById('tabUsuBtn').style.display=isAdmin()?'':'none';var _kb=document.getElementById('tabKanbanBtn');if(_kb)_kb.style.display=podeGerirObra()?'':'none';renderizarMarcaHeader();var vis={resetBtn:hasPerm('reset'),importLoteBtn:hasPerm('lote'),resetOpsBtn:hasPerm('reset'),btnAddObra:hasPerm('obras'),repoCfgBtn:isAdmin(),addUserBtn:isAdmin(),addTecnicoBtn:hasPerm('tecnicos'),novaOpBtn:hasPerm('ops'),restoreBtn:isAdmin(),dashMetasBtn:isAdmin(),novaLiberacaoBtn:hasPerm('liberar')}; /* v4.4 (R-05/R-09/R-21) */for(var id in vis){var el=document.getElementById(id);if(el)el.style.display=vis[id]?'':'none';}/* v4.4 (R-01/R-37): troca de perfil — se a aba ativa estiver oculta p/ o novo perfil, volta p/ Produção; fecha modais abertos */
+  var _abaAtiva=document.querySelector('.tab-content.active');
+  if(_abaAtiva){var _btn=document.querySelector('.tab-btn[data-tab="'+_abaAtiva.id+'"]');if(_btn&&_btn.style.display==='none'){document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active');});document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});var _p=document.getElementById('tab-producao');if(_p)_p.classList.add('active');var _pb=document.querySelector('.tab-btn[data-tab="tab-producao"]');if(_pb)_pb.classList.add('active');}}
+  document.querySelectorAll('.modal-overlay.ativo').forEach(function(m){m.classList.remove('ativo');});
+  renderizarTudo();renderizarRefs();renderizarAuditoria('');if(window.__fgBound)return;window.__fgBound=true;document.querySelectorAll('.card-resumo').forEach(function(c){c.addEventListener('click',function(){abrirResumo(this.dataset.tipo);});});document.getElementById('buscaInput').addEventListener('input',renderizarCards);document.getElementById('resetBtn').addEventListener('click',function(){if(!hasPerm('reset'))return;if(confirm('⚠️ Remover TODOS os registros de liberação?')){regAuditoria('RESET_LIBERACOES','');liberacoes=[];nextId=1;salvarTudo();renderizarCards();mostrarToast('🔄 Registros removidos');}});document.getElementById('resetOpsBtn').addEventListener('click',function(){if(!hasPerm('reset'))return;if(confirm('⚠️ Apagar TODAS as OPs avulsas/complementares desta obra?')){regAuditoria('RESET_OPS','');opsAvulsas=[];nextOpId=1;salvarTudo();renderizarOps();mostrarToast('🔄 OPs avulsas removidas');}});document.getElementById('importLoteBtn').addEventListener('click',function(){if(!hasPerm('lote')){mostrarToast('⚠️ Sem permissão','error');return;}document.getElementById('loteInput').click();});document.getElementById('loteInput').addEventListener('change',function(){var f=this.files[0];if(f)lerArquivoLote(f);this.value='';});document.getElementById('loteCancelarBtn').addEventListener('click',fecharModalLote);document.getElementById('loteConfirmarBtn').addEventListener('click',confirmarLote);document.getElementById('modalLote').addEventListener('click',function(e){if(e.target===this)fecharModalLote();});document.getElementById('modalCancelar').addEventListener('click',fecharModal);document.getElementById('modalSalvar').addEventListener('click',salvarRegistro);document.getElementById('modalRegistro').addEventListener('click',function(e){if(e.target===this)fecharModal();});document.getElementById('modalTipo').addEventListener('change',atualizarDisponivel);bindExtras();
 document.getElementById('repoCfgBtn').addEventListener('click',function(){if(!isAdmin()){mostrarToast('⚠️ Somente o admin master configura o repositório','error');return;}document.getElementById('repoUrlInput').value=SYNC_URL;document.getElementById('modalRepo').classList.add('ativo');});
 document.getElementById('repoCancelar').addEventListener('click',function(){document.getElementById('modalRepo').classList.remove('ativo');});
 document.getElementById('repoSalvar').addEventListener('click',function(){if(!isAdmin()){mostrarToast('⚠️ Somente o admin master configura o repositório','error');return;}var u=document.getElementById('repoUrlInput').value.trim();if(!u){mostrarToast('⚠️ Informe a URL do repositório','error');return;}try{localStorage.setItem('fg_sync_url',u);}catch(e){}SYNC_URL=u;document.getElementById('modalRepo').classList.remove('ativo');regAuditoria('REPO_CONFIGURADO','URL atualizada neste aparelho');mostrarToast('🔗 Repositório atualizado — reconectando…');carregarListaObras(function(){renderizarObras();preencherSwitch();puxarInicial(function(){atualizarLoginSyncInfo();});});});
@@ -2748,6 +2775,8 @@ try{if(localStorage.getItem('fg_demo_v')!==VER){Object.keys(SEED).forEach(functi
 try{if(!localStorage.getItem('fg_demo_v42')){if(!localStorage.getItem('fg_notificacoes'))localStorage.setItem('fg_notificacoes',JSON.stringify(NOTIFICACOES_SEED));['FS2026-00-0002','FS2026-00-0003','FS2026-00-0006','FS2026-00-0007','FS2026-00-0008','FS2026-00-0009'].forEach(function(c){var k='fg_anexos_'+c;if(!localStorage.getItem(k))localStorage.setItem(k,'[]');});localStorage.setItem('fg_demo_v42','1');}}catch(e){}
 /* v4.3: migração aditiva (VER mantido em demo-2026-11-10-v4) — Agenda: obs='' e status no novo vocabulário; nunca sobrescreve */
 try{if(!localStorage.getItem('fg_demo_v43')){['FS2026-00-0002','FS2026-00-0003','FS2026-00-0006','FS2026-00-0007','FS2026-00-0008','FS2026-00-0009'].forEach(function(c){var k='fg_agenda_'+c;try{var a=JSON.parse(localStorage.getItem(k)||'[]');var mudou=false;a.forEach(function(it){if(it.obs===undefined){it.obs='';mudou=true;}if(!it.status){it.status='Planejada';mudou=true;}else if(it.status==='Agendado'){it.status='Planejada';mudou=true;}else if(it.status==='Realizado'){it.status='Concluída';mudou=true;}else if(it.status==='Cancelado'){it.status='Cancelada';mudou=true;}});if(mudou)localStorage.setItem(k,JSON.stringify(a));}catch(e){}});localStorage.setItem('fg_demo_v43','1');}}catch(e){}
+/* v4.4: migração aditiva (VER mantido em demo-2026-11-10-v4) — corrige "foi cancelada" -> "foi cancelado" no fg_notificacoes já gravado; nunca sobrescreve */
+try{if(!localStorage.getItem('fg_demo_v44')){try{var _n44=JSON.parse(localStorage.getItem('fg_notificacoes')||'[]');var _m44=false;_n44.forEach(function(n){if(n.corpo&&n.corpo.indexOf('foi cancelada')>-1){n.corpo=n.corpo.replace('foi cancelada','foi cancelado');_m44=true;}});if(_m44)localStorage.setItem('fg_notificacoes',JSON.stringify(_n44));}catch(e){}localStorage.setItem('fg_demo_v44','1');}}catch(e){}
 /* nunca falar com servidor */
 try{localStorage.removeItem('fg_sync_url');}catch(e){}
 SYNC_URL='';
@@ -2764,7 +2793,7 @@ excluirObra=function(){msg('🔒 Demonstração: exclusão de obras desativada.'
 confirmarExcluirObra=function(){msg('🔒 Demonstração: exclusão de obras desativada.');};
 abrirModalSenha=function(){msg('🔒 Demonstração: senha não se aplica.');};
 salvarNovaSenha=function(){msg(BLOQ);};
-importarDados=function(ev){try{ev.target.value='';}catch(e){}msg('🔒 Demonstração: restauração de backup desativada.');};
+/* v4.4 (R-05): restauração de backup REATIVADA (gate Admin no importarDados original); o override da v4.3 foi removido */
 postServidor=function(){return Promise.resolve({error:'DEMO',msg:'🔒 Demonstração: gestão de usuários desativada.'});};
 /* v4 (#61): trava de salvarUsuario REMOVIDA — a criação de usuários na demo agora usa o fallback local (Bloco 9); os 4 perfis fixos seguem protegidos (sem botão Excluir) */
 /* usuários de exemplo (somente leitura) */
