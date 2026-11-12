@@ -2532,9 +2532,12 @@ function renderizarNotificacoes(){
 }
 function getDescricaoDe(cod,tipo){var m=masterDeCod(cod);if(!m)return '';var f=null;(m.tipologias||[]).forEach(function(t){if(t.tipo===tipo)f=t;});return f?f.descr:'';}
 function kanbanCardHtml(opNum,tipo,tecnico,qtde,cod,nomeObra){
-  var descr=getDescricaoDe(cod||dadosXML.obra.codigo,tipo)||tipo;
+  var codEf=cod||dadosXML.obra.codigo;
+  var descr=getDescricaoDe(codEf,tipo)||tipo;
+  var mCanc=masterDeCod(codEf);
+  var seloCanc=(mCanc&&mCanc.obra&&mCanc.obra.status==='cancelada')?' <span class="badge-extra">CANCELADA</span>':'';
   var obraHtml=(cod&&nomeObra)?'<div class="kc-obra">'+escH(cod)+' · '+escH(nomeObra)+'</div>':'';
-  return '<div class="kanban-card" data-tipo="'+escH(tipo)+'" data-cod="'+escH(cod||'')+'"><div class="kc-op">'+escH(tipo)+'</div><div class="kc-tipo" title="'+escH(descr)+'">'+escH(descr)+(opNum?' · '+escH(opNum):'')+'</div><div class="kc-tec">'+escH(tecnico||'Técnico não informado')+'</div><div class="kc-qtd">'+fmtInt(qtde)+' un.</div>'+obraHtml+'</div>';
+  return '<div class="kanban-card" data-tipo="'+escH(tipo)+'" data-cod="'+escH(codEf)+'"><div class="kc-op">'+escH(tipo)+seloCanc+'</div><div class="kc-tipo" title="'+escH(descr)+'">'+escH(descr)+(opNum?' · '+escH(opNum):'')+'</div><div class="kc-tec">'+escH(tecnico||'Técnico não informado')+'</div><div class="kc-qtd">'+fmtInt(qtde)+' un.</div>'+obraHtml+'</div>';
 }
 var KANBAN_FILTRO='';
 function renderizarKanban(){
