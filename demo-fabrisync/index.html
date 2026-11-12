@@ -1303,7 +1303,7 @@ function programadoHtml(){
     h+='<div class="prog-card'+(CRON_FILTRO_STATUS===s?' on':'')+'" data-status="'+escH(s)+'" style="border-top:4px solid '+cor+';"><div class="prog-num">'+cont[s]+'</div><div class="prog-lbl">'+escH(s)+'</div></div>';
   });
   h+='</div><div class="prog-total">Total: <strong>'+total+' obra(s)</strong> · clique num card para filtrar por status</div>';
-  h+='<div class="prog-filtros"><input type="text" id="progBusca" class="sel-obra" placeholder="Buscar obra, código ou cliente..." value="'+escH(CRON_BUSCA)+'"><select id="progFiltroStatus" class="sel-obra"><option value="">Todos os status</option>'+STATUS_LISTA.map(function(s){return '<option value="'+escH(s)+'"'+(CRON_FILTRO_STATUS===s?' selected':'')+'>'+escH(s)+'</option>';}).join('')+'</select><select id="progFiltroEtapa" class="sel-obra"><option value="">Todas as etapas</option>'+['Liberada','Fabricada','Expedida','Instalada','Lista de Materiais','Compras','Almoxarifado','Termo de entrega','Concluída'].map(function(s){return '<option'+(CRON_FILTRO_ETAPA===s?' selected':'')+'>'+escH(s)+'</option>';}).join('')+'</select></div>';
+  h+='<div class="prog-filtros"><input type="text" id="progBusca" class="sel-obra" placeholder="Buscar obra, código ou cliente..." value="'+escH(CRON_BUSCA)+'"><select id="progFiltroStatus" class="sel-obra"><option value="">Todos os status</option>'+STATUS_LISTA.map(function(s){return '<option value="'+escH(s)+'"'+(CRON_FILTRO_STATUS===s?' selected':'')+'>'+escH(s)+'</option>';}).join('')+'</select><select id="progFiltroEtapa" class="sel-obra"><option value="">Todas as etapas</option>'+['Aguardando liberação','Liberada','Fabricada','Expedida','Instalada','Termo de entrega','Concluída'].map(function(s){return '<option'+(CRON_FILTRO_ETAPA===s?' selected':'')+'>'+escH(s)+'</option>';}).join('')+'</select></div>';
   var filtrada=lista.filter(function(o){
     if(CRON_FILTRO_STATUS&&o.st.status!==CRON_FILTRO_STATUS)return false;
     if(CRON_FILTRO_ETAPA&&o.ea.nome!==CRON_FILTRO_ETAPA)return false;
@@ -1534,7 +1534,7 @@ function marcosHtml(cod){
     }
     h+='</div>';
   });
-  h+='</div><div class="lote-nota">Um marco Bloqueado vira a etapa atual da obra.</div></div>';
+  h+='</div></div>';
   return h;
 }
 function entregaFormHtml(cod){
@@ -2722,15 +2722,8 @@ function etapaAtualDe(cod){
   var m=masterDeCod(cod);if(!m)return {nome:'Sem dados',origem:'',bloqueado:false};
   var tips=m.tipologias||[];
   if(!tips.length)return {nome:'Sem tipologias',origem:'',bloqueado:false};
-  var mc=marcosDe(cod);
-  if(mc&&mc.length){
-    for(var i=0;i<MARCOS_NOMES.length;i++){
-      var nm=MARCOS_NOMES[i],rec=null;
-      mc.forEach(function(x){if(x.nome===nm)rec=x;});
-      if(rec&&rec.status!=='Concluído')return {nome:nm,origem:'marco',bloqueado:rec.status==='Bloqueado'};
-    }
-  }
   var lib=liberacoesDe(cod);
+  if(!lib.length)return {nome:'Aguardando liberação',origem:'',bloqueado:false};
   function qtdEtapa(tipo,stage){var s=0;lib.forEach(function(r){if(r.tipo===tipo&&(r.stage||'liberada')===stage)s+=(r.qtde||0);});return s;}
   var ordem=['liberada','fabricada','expedida','instalada'];
   for(var j=0;j<ordem.length;j++){
