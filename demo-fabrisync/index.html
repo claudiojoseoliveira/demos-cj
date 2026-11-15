@@ -2580,7 +2580,6 @@ function preencherFamFiltro(){var s=document.getElementById('famFiltro');if(!s)r
 /* Stores locais por obra (localStorage, via chave()): cronograma, marcos, entregas, inconformidades, agenda.
    Globais: fg_permissoes_demo, fg_marca_cliente. Nada aqui toca os totais de liberação (expected.json).
    v4.2: notificacoes (GLOBAL fg_notificacoes, por perfil) + anexos (por obra, em CHAVES_OBRA). */
-var V4_RISK_DAYS=7;
 var MARCOS_NOMES=['Lista de Materiais','Compras','Almoxarifado'];
 var STATUS_LISTA=['Atrasado','Em risco','No prazo','Sem prazo','Entregue','Cancelada'];
 var cronograma=null,marcos=[],entregas=[],inconformidades=[],agenda=[];
@@ -2907,14 +2906,17 @@ function calcularStatusObra(cod){
   if(hoje>c.endDate)return {status:'Atrasado',cor:'#c0392b'};
   var dias=difDias(hoje,c.endDate);
   var prog=progressoObra(cod),esp=progressoEsperado(cod);
-  if(dias<=V4_RISK_DAYS&&prog<esp)return {status:'Em risco',cor:'#e08e0b',dias:dias,prog:prog,esp:esp};
+  var s9=situacaoObraH9(cod); /* H10 (Lote 5.7): um só critério de "em risco" — o do H9 */
+  if(s9&&s9.sit==='EM RISCO')return {status:'Em risco',cor:'#e08e0b',dias:dias,prog:prog,esp:esp};
   return {status:'No prazo',cor:'#1a6fb0',dias:dias,prog:prog,esp:esp};
 }
 /* ---- situação da obra (H9 [PROVISÓRIO], Lote 5; decisão do dono 14/11, Lote 5.1:
    ATRASADA = prazo do cronograma vencido com menos de 100% — meta atrasada NÃO
    muda a situação (continua como alerta próprio no Dashboard, na TV e nas
-   notificações). NÃO altera calcularStatusObra (vocabulário antigo, usado no
-   Programado, Kanban e relatório) nem o cálculo de metas. Reaproveita totaisObra,
+   notificações). Lote 5.7 (H10): calcularStatusObra reutiliza situacaoObraH9
+   para "Em risco" (um só critério; V4_RISK_DAYS removido) — o resto do
+   vocabulário antigo (Programado, Kanban, relatório) segue, e o cálculo de
+   metas não muda. Reaproveita totaisObra,
    progressoObra, progressoEsperado, cronogramaDe, etapasCadeia e
    retiradoCobreContratado. ---- */
 /* F7 (Lote 5.3): cor de texto legível sobre fundo colorido — WCAG 2.1 (≥4,5:1).
@@ -2951,7 +2953,7 @@ function renderizarContagemSituacoes(){
     var t=totaisObra(c);var last=etapasCadeia(c)[etapasCadeia(c).length-1];
     if(t&&t.tu>0){soma+=Math.min(100,(t.st[last]||0)/t.tu*100);n++;}});
   var total=cods.length||1;
-  var cump=Math.round((cont['EM DIA']+cont['CONCLUÍDA'])/total*100);
+  var cump=Math.round((total-cont['ATRASADA'])/total*100); /* H10 (Lote 5.7): (total-ATRASADAS)/total; EM RISCO não conta como não cumprida */
   var cores={'CONCLUÍDA':'#1a9a5a','ATRASADA':'#c0392b','EM RISCO':'#e08e0b','EM DIA':'#1a6fb0'};
   var chips=['CONCLUÍDA','ATRASADA','EM RISCO','EM DIA'].map(function(k){
     return '<span class="faixa-chip" style="border-color:'+cores[k]+';color:'+textoColorido(cores[k])+';" title="'+escH(k)+'">'+escH(k)+': '+cont[k]+'</span>';}).join('');
