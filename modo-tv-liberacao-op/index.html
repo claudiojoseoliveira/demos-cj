@@ -472,6 +472,11 @@ body.demoTvAberta #demoBtn{display:none}
 #tvFunil,#tvFunilSub,.tv-meio{display:none}
 /* modo-tv — sem botão Sair */
 #tvSair{display:none}
+/* v12 — Dashboard: demandas por técnico, todas as obras */
+#dashTecTodas{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.dash-tec-grupo{border:1px solid #dbe4ee;border-radius:10px;padding:10px;background:#f8fafc}
+.dash-tec-grupo-h{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:#1a3d5e;font-size:.85rem;margin-bottom:8px}
+.dash-tec-grupo .kanban-card{margin-bottom:8px}
 .tv-tec-obra{font-size:11px;color:#9ca3af;font-weight:700}
 
 .kanban-col-h{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:#1a3d5e;font-size:.82rem;margin-bottom:8px}
@@ -560,7 +565,7 @@ body.demoTvAberta #demoBtn{display:none}
 <button class="btn btn-info btn-sm" id="restoreBtn"><i class="fas fa-upload"></i> <span>Importar</span></button>
 <input type="file" id="fileInput" accept=".json">
 </div></div>
-<div class="modo-badge">MODO TV · Liberação de OP · por técnico · v11 17/11</div> <div class="tabs">
+<div class="modo-badge">MODO TV · Liberação de OP · por técnico · v13 17/11</div> <div class="tabs">
 <button class="tab-btn active" data-tab="tab-producao"><i class="fas fa-industry"></i> Ordem de Produção</button>
 <button class="tab-btn" data-tab="tab-ops"><i class="fas fa-tools"></i> OPR / OPC</button>
 <button class="tab-btn" data-tab="tab-dash"><i class="fas fa-chart-line"></i> Dashboard</button>
@@ -617,7 +622,7 @@ body.demoTvAberta #demoBtn{display:none}
 <button class="btn btn-info btn-sm" id="dashMetasBtn"><i class="fas fa-bullseye"></i> Metas</button>
 </div></div>
 <div class="lote-nota" id="dashResumoPer" style="margin:0 0 8px;"></div>
-<h4 class="dash-h">Posição atual da obra (acumulado)</h4><div class="kpi-grid" id="dashKpis"></div>
+<h4 class="dash-h">Posição atual da obra (acumulado)</h4><div class="kpi-grid" id="dashKpis"></div><h4 class="dash-h">Demandas por técnico — todas as obras</h4><div id="dashTecTodas"></div>
 <div id="faixaSituacao"></div>
 <div id="dashSituacoes"></div>
 <h4 class="dash-h">Resumo por tipologias</h4><div id="dashResumoTip"></div>
@@ -1052,7 +1057,9 @@ function somaDiasISO(iso,n){var p=String(iso||'').split('-');if(p.length!==3)ret
 function previstaDe(r){if(!r||!r.inicio||!r.grau)return '';return somaDiasISO(r.inicio,GRAU_SLA[r.grau]||3);}
 function diasConclusao(r){if(!r||!r.inicio||!r.fim)return '';var a=new Date(r.inicio+'T00:00:00'),b=new Date(r.fim+'T00:00:00');if(isNaN(a)||isNaN(b))return '';return Math.round((b-a)/86400000);}
 function estaAtrasada(r){if(!r||r.status==='concluida')return false;var p=previstaDe(r);if(!p)return false;return hojeLocal()>p;}
-var KANBAN_VISAO={ativas:true,concluidas:false,canceladas:false};
+var KANBAN_VISAO={ativas:true,concluidas:true,canceladas:false};
+var TV_VISAO={ativas:true,concluidas:false,canceladas:false};
+function visaoIncluiTV(r){if(!r)return false;if(r.cancelada)return TV_VISAO.canceladas;if((r.status||'nao-iniciada')==='concluida')return TV_VISAO.concluidas;return TV_VISAO.ativas;}
 function visaoInclui(r){if(!r)return false;if(r.cancelada)return KANBAN_VISAO.canceladas;if((r.status||'nao-iniciada')==='concluida')return KANBAN_VISAO.concluidas;return KANBAN_VISAO.ativas;}
 function atualizarPrevistaModal(){var mi=document.getElementById('modalInicio'),mg=document.getElementById('modalGrau'),pv=document.getElementById('previstaValor');if(!mi||!mg||!pv)return;var p=previstaDe({inicio:mi.value,grau:mg.value});pv.textContent=p?fmtTs(p):'—';}
 function kanbanCardTecHtml(x,todas){
@@ -1093,10 +1100,11 @@ function tvTecnicosDe(lib){
   var out=[];
   ordem.forEach(function(t){out.push({nome:t,recs:mapa[t]||[]});});
   Object.keys(mapa).forEach(function(t){if(ordem.indexOf(t)===-1)out.push({nome:t,recs:mapa[t]});});
+  out.sort(function(a,b){if(a.nome==='Sem técnico')return 1;if(b.nome==='Sem técnico')return -1;return a.nome.localeCompare(b.nome,'pt-BR');});
   return out;
 }
 function tvTecBlockHtml(t,grande){
-  var recs=(t.recs||[]).filter(visaoInclui);
+  var recs=(t.recs||[]).filter(visaoIncluiTV);
   var ativas=recs.filter(function(r){return !r.cancelada&&(r.status||'nao-iniciada')!=='concluida';});
   var concl=recs.filter(function(r){return !r.cancelada&&(r.status||'nao-iniciada')==='concluida';});
   var canc=recs.filter(function(r){return !!r.cancelada;});
@@ -2819,6 +2827,23 @@ function resumoCardsHtml(){
   h+=card('avulsas','',fmtInt(getTotalAvulsasQtd()),'OPR + OPC (qtd)',100,'#7a96b2','OPR '+fmtInt(totalOps('OPR'))+' · OPC '+fmtInt(totalOps('OPC'))+' (fora do saldo)');
   return h;
 }
+function renderizarDashTecTodas(){
+  var box=document.getElementById('dashTecTodas');if(!box)return;
+  var todos=[];try{todos=tvTodosRegistros();}catch(e){todos=[];}
+  var tecs=tvTecnicosDe(todos);
+  var h='';
+  tecs.forEach(function(t){
+    var cards=[];
+    (t.recs||[]).forEach(function(r){if(!visaoInclui(r))return;cards.push({r:r,cod:r._obraCod,nome:r._obraNome});});
+    var ativas=cards.filter(function(x){return (x.r.status||'nao-iniciada')!=='concluida'&&!x.r.cancelada;}).length;
+    h+='<div class="dash-tec-grupo"><div class="dash-tec-grupo-h"><span>'+escH(t.nome)+'</span><span>'+ativas+' ativas · '+cards.length+'</span></div>';
+    if(!cards.length)h+='<div class="kanban-vazio">Nada com este técnico.</div>';
+    cards.sort(function(a,b){var ord=function(r){return r.cancelada?2:(r.status||'nao-iniciada')==='concluida'?1:0;};var oa=ord(a.r),ob=ord(b.r);if(oa!==ob)return oa-ob;var pa=previstaDe(a.r)||'9999',pb=previstaDe(b.r)||'9999';return pa<pb?-1:pa>pb?1:0;});
+    cards.forEach(function(x){h+=kanbanCardTecHtml(x,true);});
+    h+='</div>';
+  });
+  box.innerHTML=h;
+}
 function renderizarDashboard(){var el=document.getElementById('dashKpis');if(!el)return;
 document.getElementById('dashPeriodo').value=DASH_PREFS.periodo;document.getElementById('dashMetrica').value=DASH_PREFS.metrica;document.getElementById('dashDe').value=DASH_PREFS.de||'';document.getElementById('dashAte').value=DASH_PREFS.ate||'';document.getElementById('dashCustom').style.display=DASH_PREFS.periodo==='custom'?'inline-flex':'none';
 var sf=document.getElementById('dashFam');var curF=DASH_PREFS.fam;sf.innerHTML='<option value="">Todas as famílias</option>';listaFamilias().forEach(function(f){var o=document.createElement('option');o.value=f;o.textContent=f;sf.appendChild(o);});sf.value=curF;
@@ -2857,7 +2882,7 @@ var th='';Object.keys(T).sort(function(a,b){return T[b].tot-T[a].tot;}).forEach(
 document.getElementById('dashTecBody').innerHTML=th||'<tr><td colspan="6" style="text-align:center;color:#8a9bb0;font-style:italic;">Sem dados no período</td></tr>';
 /* 8) OPR/OPC no período */
 var ah='';opsAvulsasAtivas().filter(function(o){return dentroPer(o,per)&&(!DASH_PREFS.fam||familiaDe(o.tipo)===DASH_PREFS.fam);}).forEach(function(o){ah+='<tr><td><span class="tp-badge '+opTipoDe(o).toLowerCase()+'">'+opTipoDe(o)+'</span> '+escH(o.nomen)+'</td><td>'+escH(o.categoria)+'</td><td>'+escH(o.motivo)+'</td><td style="text-align:right;">'+fmtInt(o.qtde)+'</td><td>'+escH(o.status)+'</td></tr>';});
-document.getElementById('dashAvulsasBody').innerHTML=ah||'<tr><td colspan="5" style="text-align:center;color:#8a9bb0;font-style:italic;">Sem OPR/OPC no período</td></tr>';renderizarContagemSituacoes();}
+document.getElementById('dashAvulsasBody').innerHTML=ah||'<tr><td colspan="5" style="text-align:center;color:#8a9bb0;font-style:italic;">Sem OPR/OPC no período</td></tr>';try{renderizarDashTecTodas();}catch(e){}renderizarContagemSituacoes();}
 function abrirModalMetas(){if(!podeEditarPlanejamento()){mostrarToast('⚠️ '+msgSemPermissao('editar as metas',true),'error');return;}var h='';ETAPAS_LANC.forEach(function(s){var m=metas[s]||{};h+='<div class="meta-row"><span class="stg" style="background:'+ETAPA_COR[s]+';color:'+textoSobre(ETAPA_COR[s])+';">'+ETAPA_NOME[s]+'</span><label>Meta %<input type="number" min="0" max="100" step="0.1" id="metaPct_'+s+'" value="'+(m.pct||'')+'"></label><label>Prazo<input type="date" id="metaPrazo_'+s+'" value="'+(m.prazo||'')+'"></label></div>';});document.getElementById('metasBox').innerHTML=h;document.getElementById('modalMetas').classList.add('ativo');}
 function salvarMetas(){if(!podeEditarPlanejamento()){mostrarToast('⚠️ '+msgSemPermissao('editar as metas',true),'error');return;}var nm={};var erro='';ETAPAS_LANC.forEach(function(s){var p=parseFloat(document.getElementById('metaPct_'+s).value);var d=document.getElementById('metaPrazo_'+s).value;if(!isNaN(p)&&(p<0||p>100))erro='A meta deve estar entre 0 e 100%.';if(!isNaN(p)&&p>0)nm[s]={pct:p,prazo:d||''};});if(erro){mostrarToast('⚠️ '+erro,'error');return;}metas=nm;regAuditoria('METAS_ALTERADAS',ETAPAS_LANC.map(function(s){return ETAPA_NOME[s]+': '+(nm[s]?nm[s].pct+'%'+(nm[s].prazo?' até '+nm[s].prazo:''):'—');}).join(' | '));salvarTudo();document.getElementById('modalMetas').classList.remove('ativo');renderizarDashboard();mostrarToast(msgSalvoLocal('✅ Metas salvas'));}
 
@@ -3103,7 +3128,7 @@ var KANBAN_FILTRO='';
 function renderizarKanban(){
   var box=document.getElementById('kanbanConteudo');if(!box)return;
   var codAtual=dadosXML.obra.codigo;
-  if(!KANBAN_FILTRO)KANBAN_FILTRO=codAtual;
+  if(!KANBAN_FILTRO)KANBAN_FILTRO='todas';
   var todas=KANBAN_FILTRO==='todas';
   var mapa=obrasMap();
   var codsTodas=Object.keys(mapa).sort();
@@ -3115,6 +3140,14 @@ function renderizarKanban(){
     var m=masterDeCod(c);
     fontes.push({cod:c,nome:m?m.obra.nome:c,lib:(ld.liberacoes||[]),ops:(ld.opsAvulsas||[]).filter(function(o){return !o.cancelada;})});
   });
+  /* v12 — normalizar os registros das outras obras (nomes da demo + defaults v8) */
+  fontes.forEach(function(f){f.lib.forEach(function(r){
+    if(r.tecnico&&TEC_REAL_MAP[r.tecnico])r.tecnico=TEC_REAL_MAP[r.tecnico];
+    if(!r.status)r.status='concluida';
+    if(!r.grau)r.grau='N3';
+    if(!r.inicio)r.inicio=r.data||'';
+    if(r.status==='concluida'&&!r.fim)r.fim=r.data||'';
+  });});
   var cols=['liberada','fabricada','expedida'];
   var _temEnt=false,_temRet=false;
   fontes.forEach(function(f){if(modoEntregaDe(f.cod)==='retirada')_temRet=true;else _temEnt=true;});
@@ -3145,7 +3178,7 @@ function renderizarKanban(){
   h+='<div class="kanban-wrap"><div class="kanban-cols">';
 if(_soLib){
     var tecs=tecnicosAtivos().slice();
-    fontes.forEach(function(f){f.lib.forEach(function(r){if(r.tecnico&&tecs.indexOf(r.tecnico)===-1)tecs.push(r.tecnico);});});
+    fontes.forEach(function(f){f.lib.forEach(function(r){if(r.tecnico&&tecs.indexOf(r.tecnico)===-1)tecs.push(r.tecnico);});});     tecs.sort(function(a,b){return a.localeCompare(b,'pt-BR');});
     function cardsDeTec(t){var out=[];fontes.forEach(function(f){f.lib.forEach(function(r){if(!visaoInclui(r))return;if((r.tecnico||'')===t)out.push({r:r,cod:f.cod,nome:f.nome});});});return out;}
     function ordemStatus(a,b){var ord={'nao-iniciada':0,'em-andamento':1,'suspensa':2,'concluida':3};var sa=ord[a.r.status||'nao-iniciada'],sb=ord[b.r.status||'nao-iniciada'];if(sa!==sb)return sa-sb;return (a.r.inicio||'')<(b.r.inicio||'')?-1:(a.r.inicio||'')>(b.r.inicio||'')?1:0;}
     tecs.forEach(function(t){
@@ -3566,6 +3599,7 @@ function tvTodosRegistros(){
   });
   return out;
 }
+window.tvTodosRegistros=tvTodosRegistros;
 function tvGirarTec(){var tecs=tvTecnicosDe(tvTodosRegistros());if(tecs.length>1){TV.tecIdx=(TV.tecIdx+1)%tecs.length;tvRender();}}
 function carregarDadosTV(){
   try{
@@ -3594,7 +3628,7 @@ function carregarDadosTV(){
 function tvRender(){
   var todos=tvTodosRegistros();
   var hoje=hojeLocal();
-  var vis=todos.filter(visaoInclui);
+  var vis=todos.filter(visaoIncluiTV);
   var ativas=vis.filter(function(r){return !r.cancelada&&(r.status||'nao-iniciada')!=='concluida';});
   var atr=vis.filter(function(r){return estaAtrasada(r);});
   var hj=todos.filter(function(r){return String(r.data||'').slice(0,10)===hoje;});
