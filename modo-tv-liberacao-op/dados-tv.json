@@ -1,0 +1,4 @@
+{
+  "versao": "seed",
+  "nota": "Sem dados reais — a TV mostra o seed (dados fictícios). Para dados reais, substituir este arquivo por um snapshot com as chaves fg_* (mesmo formato do SEED) e uma versao nova."
+}
